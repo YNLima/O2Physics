@@ -476,13 +476,6 @@ struct JetSpectraCharged {
       }
 
       float centrality = 0.0f;
-      if constexpr (soa::is_soa_join_v<std::decay_t<decltype(collision)>>) {
-          if constexpr (soa::has_column_v<std::decay_t<decltype(collision)>, aod::jetcollision::Centrality>) {
-              centrality = collision.centrality();
-          }
-      } else {
-        centrality = collision.centrality();
-      }
     
       for (auto const& jet : chargedJets) { //processando jatos carregados
           if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
@@ -526,13 +519,6 @@ struct JetSpectraCharged {
       }
 
       float centrality = 0.0f;
-      if constexpr (soa::is_soa_join_v<std::decay_t<decltype(collision)>>) {
-          if constexpr (soa::has_column_v<std::decay_t<decltype(collision)>, aod::jetcollision::Centrality>) {
-              centrality = collision.centrality();
-          }
-      } else {
-        centrality = collision.centrality();
-      }
           
       for (auto const& jet : chargedJets) {
           if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
