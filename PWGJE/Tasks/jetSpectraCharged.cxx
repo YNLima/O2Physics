@@ -335,25 +335,6 @@ struct JetSpectraCharged {
       return isMinLeadingConstituent && isMaxLeadingConstituent;
     }
 
-//------------------------------------------------------------------------------------ 
-//BLOCK 5 (for D0 jets):
-
-//Specifying heavy-flavor jets that contain D0:
-   // if constexpr (std::is_same_v<TTracks, HfCandidates> || std::is_same_v<TTracks, HfMCCandidates>) {
-        
-     //   if (jet.pt() < 5.0) return false; //corte de pT mais alto para jets de heavy-flavor
-        
-       // bool hasD0 = false; //verifica se há pelo menos um D⁰ no jet
-        //for (const auto& constituent : jet.template tracks_as<TTracks>()) {
-          //  if (constituent.isSelD0() >= 1) { //assumindo que isSelD0() retorna >0 para candidatos selecionados
-            //    hasD0 = true;
-              //  break;
-           // }
-       // }
-        //if (!hasD0) return false;
-    //}    
-//------------------------------------------------------------------------------------  
-
     return true;
   }
 
@@ -433,7 +414,7 @@ struct JetSpectraCharged {
   }
   
 //------------------------------------------------------------------------------------
-//BLOCK 6 (for D0 jets):
+//BLOCK 5 (for D0 jets):
 
 //Function to fill histograms D0:
   template <typename TJet>
@@ -441,7 +422,7 @@ struct JetSpectraCharged {
   {
       if (!useD0Jets) return;
 
-      bool hasD0InJet = false; //verificando se o jato tem D0
+      bool hasD0InJet = false; //checking if the jet has D0
 
       //Iterating only over D0 that are constituents of this jet:
       for (const auto& d0 : jet.template tracks_as<HfCandidates>()) {
@@ -462,7 +443,7 @@ struct JetSpectraCharged {
       }
   }
 
-//Analyzing both charged jets and jets with D0:
+//Data: analyzing both charged jets and jets with D0:
   void processSpectraDataWithD0(soa::Filtered<aod::JetCollisions>::iterator const& collision,
                              soa::Join<aod::ChargedJets, aod::ChargedJetConstituents> const& chargedJets,
                              aod::JetTracks const& tracks [[maybe_unused]],
@@ -477,7 +458,7 @@ struct JetSpectraCharged {
 
       float centrality = collision.centFT0M();
     
-      for (auto const& jet : chargedJets) { //processando jatos carregados
+      for (auto const& jet : chargedJets) { //processing charged jets
           if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
               continue;
           }
@@ -486,7 +467,7 @@ struct JetSpectraCharged {
           }
           fillJetHistograms(jet, centrality);
     
-      if (useD0Jets) { // processando jatos com D0
+      if (useD0Jets) { //processing D0 jets
               fillD0JetHistograms(jet, centrality);
           }
       }
@@ -494,8 +475,7 @@ struct JetSpectraCharged {
 
   PROCESS_SWITCH(JetSpectraCharged, processSpectraDataWithD0, "jet spectra for Data with D0", false);
 
-//Bloco para análise MC de jatos com D0: aqui tanto  
-//jatos carregados quanto jatos com D0 são analisados 
+//MC: analyzing both charged jets and jets with D0:
   void processSpectraMCDWithD0(soa::Filtered<aod::JetCollisions>::iterator const& collision,
                             soa::Join<aod::ChargedMCDetectorLevelJets, aod::ChargedMCDetectorLevelJetConstituents> const& chargedJets,
                             aod::JetTracks const& tracks [[maybe_unused]],
@@ -510,7 +490,7 @@ struct JetSpectraCharged {
 
       float centrality = collision.centFT0M();
           
-      for (auto const& jet : chargedJets) {
+      for (auto const& jet : chargedJets) { //processing charged jets
           if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
               continue;
           }
@@ -519,7 +499,7 @@ struct JetSpectraCharged {
           }
           fillJetHistograms(jet, centrality);
     
-      if (useD0Jets) {
+      if (useD0Jets) { //processing D0 jets
               fillD0JetHistograms(jet, centrality);
           }
       }
