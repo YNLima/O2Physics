@@ -69,10 +69,10 @@ struct JetSpectraCharged {
   using HfCandidates = soa::Join<aod::HfCand2Prong, aod::HfSelD0>;
   using HfMCCandidates = soa::Join<HfCandidates, aod::HfCand2ProngMcRec>;
 
-//--HfSelD0: informações de seleção par D0
+//--HfSelD0: informações de seleção para D0
 //--HfCand2Prong: informações de reconstrução dos 
 //  candidatos 2-prong
-//--HfCand2ProngMcRecÇ informações Monte Carlo de 
+//--HfCand2ProngMcRec: informações Monte Carlo de 
 //  reconstrução dos candidatos 2-prong
 //------------------------------------------------------------------------------------  
 
