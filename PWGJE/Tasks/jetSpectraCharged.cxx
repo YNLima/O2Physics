@@ -476,439 +476,498 @@ struct JetSpectraCharged {
       registry.fill(HIST("h_jet_pt_with_d0"), jet.pt(), weight);
     }
   }
-}
-// ¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´><(((º>
-// Função para processar eventos que contém jatos com D0:
-void
-  processD0JetsData(soa::Filtered<aod::JetCollisions>::iterator const& collision, // colisão filtrada
-                    D0Jets const& d0Jets,                                         // jatos com informações D0
-                    D0Candidates const& d0Candidates)                             // candidatos D0
-// aod::JetTracks const& tracks) //tracks gerais
-{
-  // Seleção de colisão (via seleção padrão do O2):
-  if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
-    return;
-  }
-  // Corte de ocupação (remove eventos com ocupação anômala):
-  if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
-    return;
-  }
 
-  float centrality = collision.centFT0M(); // obtendo a centralidade
-
-  // Loop sobre todos os jatos D⁰ no evento:
-  for (auto const& jet : d0Jets) {
-    // Verificando aceitação em eta:
-    if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
-      continue;
-    }
-    // Aplicando cortes de aceitação em eta:
-    if (!isAcceptedJet<aod::JetTracks>(jet)) {
-      continue;
-    }
-
-    fillJetHistograms(jet, centrality);     // preenchendo histogramas gerais de jatos
-    fillD0JetHistograms(jet, d0Candidates); //, tracks); //preenchendo histrogramas de jatos D0
-  }
-}
-
-PROCESS_SWITCH(JetSpectraCharged, processD0JetsData, "jet spectra for Data with D0", false);
-// ¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´><(((º>
-
-template <typename TJets>
-void fillMCPAreaSubHistograms(TJets const& jet, float rho = 0.0, float weight = 1.0)
-{
-  float pTHat = 10. / (std::pow(weight, 1.0 / pTHatExponent));
-  if (jet.pt() > pTHatMaxMCP * pTHat || pTHat < pTHatAbsoluteMin) {
-    return;
-  }
-  if (jet.r() == round(selectedJetsRadius * 100.0f)) {
-    // fill mcp jet histograms
-    double jetcorrpt = jet.pt() - (rho * jet.area());
-    registry.fill(HIST("h_jet_pt_part_rhoareasubtracted"), jetcorrpt, weight);
-    registry.fill(HIST("h3_jet_pt_jet_eta_jet_phi_part_rhoareasubtracted"), jetcorrpt, jet.eta(), jet.phi(), weight);
-    if (jetcorrpt > 0) {
-      registry.fill(HIST("h_jet_eta_part_rhoareasubtracted"), jet.eta(), weight);
-      registry.fill(HIST("h_jet_phi_part_rhoareasubtracted"), jet.phi(), weight);
-      registry.fill(HIST("h2_jet_pt_part_jet_area_part_rhoareasubtracted"), jetcorrpt, jet.area(), weight);
-      registry.fill(HIST("h2_jet_pt_part_jet_ntracks_part_rhoareasubtracted"), jetcorrpt, jet.tracksIds().size(), weight);
-    }
-  }
-}
-
-template <typename TJets>
-void fillEventWiseConstituentSubtractedHistograms(TJets const& jet, float centrality, float weight = 1.0)
-{
-  float pTHat = 10. / (std::pow(weight, 1.0 / pTHatExponent));
-  if (jet.pt() > pTHatMaxMCD * pTHat || pTHat < pTHatAbsoluteMin) {
-    return;
-  }
-  if (jet.r() == round(selectedJetsRadius * 100.0f)) {
-    registry.fill(HIST("h2_centrality_jet_pt_eventwiseconstituentsubtracted"), centrality, jet.pt(), weight);
-    registry.fill(HIST("jet_observables_eventwiseconstituentsubtracted"), jet.pt(), jet.eta(), jet.phi(), weight);
-  }
-}
-
-template <typename TTracks>
-void fillTrackHistograms(TTracks const& track, float weight = 1.0)
-{
-  registry.fill(HIST("h_track_pt"), track.pt(), weight);
-  registry.fill(HIST("h2_track_eta_track_phi"), track.eta(), track.phi(), weight);
-}
-
-template <typename TBase, typename TTag>
-void fillMatchedHistograms(TBase const& jetMCD, float weight = 1.0)
-{
-  float pTHat = 10. / (std::pow(weight, 1.0 / pTHatExponent));
-  if (jetMCD.pt() > pTHatMaxMCD * pTHat || pTHat < pTHatAbsoluteMin) {
-    return;
-  }
-  // fill geometry matched histograms
-  if (checkGeoMatched) {
-    if (jetMCD.has_matchedJetGeo()) {
-      for (const auto& jetMCP : jetMCD.template matchedJetGeo_as<std::decay_t<TTag>>()) {
-        if (jetMCP.pt() > pTHatMaxMCP * pTHat || pTHat < pTHatAbsoluteMin) {
-          continue;
-        }
-        if (jetMCD.r() == round(selectedJetsRadius * 100.0f)) {
-          double dpt = jetMCP.pt() - jetMCD.pt();
-          if (jetfindingutilities::isInEtaAcceptance(jetMCD, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
-            registry.fill(HIST("h2_jet_pt_mcd_jet_pt_mcp_matchedgeo_mcdetaconstraint"), jetMCD.pt(), jetMCP.pt(), weight);
-            registry.fill(HIST("h2_jet_phi_mcd_jet_phi_mcp_matchedgeo_mcdetaconstraint"), jetMCD.phi(), jetMCP.phi(), weight);
-            registry.fill(HIST("h2_jet_pt_mcd_jet_pt_diff_matchedgeo"), jetMCD.pt(), dpt / jetMCD.pt(), weight);
-            registry.fill(HIST("h2_jet_ntracks_mcd_jet_ntracks_mcp_matchedgeo"), jetMCD.tracksIds().size(), jetMCP.tracksIds().size(), weight);
-          }
-          if (jetfindingutilities::isInEtaAcceptance(jetMCP, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
-            registry.fill(HIST("h2_jet_pt_mcd_jet_pt_mcp_matchedgeo_mcpetaconstraint"), jetMCD.pt(), jetMCP.pt(), weight);
-            registry.fill(HIST("h2_jet_phi_mcd_jet_phi_mcp_matchedgeo_mcpetaconstraint"), jetMCD.phi(), jetMCP.phi(), weight);
-            registry.fill(HIST("h2_jet_pt_mcp_jet_pt_diff_matchedgeo"), jetMCP.pt(), dpt / jetMCP.pt(), weight);
-            registry.fill(HIST("h2_jet_pt_mcp_jet_pt_ratio_matchedgeo"), jetMCP.pt(), jetMCD.pt() / jetMCP.pt(), weight);
-          }
-          registry.fill(HIST("h2_jet_eta_mcd_jet_eta_mcp_matchedgeo"), jetMCD.eta(), jetMCP.eta(), weight);
-        }
-      }
-    }
-  }
-  // fill pt matched histograms
-  if (checkPtMatched) {
-    if (jetMCD.has_matchedJetPt()) {
-      for (const auto& jetMCP : jetMCD.template matchedJetPt_as<std::decay_t<TTag>>()) {
-        if (jetMCP.pt() > pTHatMaxMCP * pTHat) {
-          continue;
-        }
-        if (!jetfindingutilities::isInEtaAcceptance(jetMCP, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
-          continue;
-        }
-        if (jetMCD.r() == round(selectedJetsRadius * 100.0f)) {
-          double dpt = jetMCP.pt() - jetMCD.pt();
-          if (jetfindingutilities::isInEtaAcceptance(jetMCD, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
-            registry.fill(HIST("h2_jet_pt_mcd_jet_pt_mcp_matchedpt_mcdetaconstraint"), jetMCD.pt(), jetMCP.pt(), weight);
-            registry.fill(HIST("h2_jet_phi_mcd_jet_phi_mcp_matchedpt_mcdetaconstraint"), jetMCD.phi(), jetMCP.phi(), weight);
-            registry.fill(HIST("h2_jet_pt_mcd_jet_pt_diff_matchedpt"), jetMCD.pt(), dpt / jetMCD.pt(), weight);
-            registry.fill(HIST("h2_jet_ntracks_mcd_jet_ntracks_mcp_matchedpt"), jetMCD.tracksIds().size(), jetMCP.tracksIds().size(), weight);
-          }
-          if (jetfindingutilities::isInEtaAcceptance(jetMCP, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
-            registry.fill(HIST("h2_jet_pt_mcd_jet_pt_mcp_matchedpt_mcpetaconstraint"), jetMCD.pt(), jetMCP.pt(), weight);
-            registry.fill(HIST("h2_jet_phi_mcd_jet_phi_mcp_matchedpt_mcpetaconstraint"), jetMCD.phi(), jetMCP.phi(), weight);
-            registry.fill(HIST("h2_jet_pt_mcp_jet_pt_diff_matchedpt"), jetMCP.pt(), dpt / jetMCP.pt(), weight);
-            registry.fill(HIST("h2_jet_pt_mcp_jet_pt_ratio_matchedpt"), jetMCP.pt(), jetMCD.pt() / jetMCP.pt(), weight);
-          }
-          registry.fill(HIST("h2_jet_eta_mcd_jet_eta_mcp_matchedpt"), jetMCD.eta(), jetMCP.eta(), weight);
-        }
-      }
-    }
-  }
-  // fill geometry and pt histograms
-  if (checkGeoPtMatched) {
-    if (jetMCD.has_matchedJetGeo() && jetMCD.has_matchedJetPt()) {
-      for (const auto& jetMCP : jetMCD.template matchedJetGeo_as<std::decay_t<TTag>>()) {
-        if (jetMCP.pt() > pTHatMaxMCP * pTHat) {
-          continue;
-        }
-        if (!jetfindingutilities::isInEtaAcceptance(jetMCP, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
-          continue;
-        }
-        if (jetMCD.template matchedJetGeo_first_as<std::decay_t<TTag>>().globalIndex() == jetMCD.template matchedJetPt_first_as<std::decay_t<TTag>>().globalIndex()) { // not a good way to do this
-          double dpt = jetMCP.pt() - jetMCD.pt();
-          if (jetfindingutilities::isInEtaAcceptance(jetMCD, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
-            registry.fill(HIST("h2_jet_pt_mcd_jet_pt_mcp_matchedgeopt_mcdetaconstraint"), jetMCD.pt(), jetMCP.pt(), weight);
-            registry.fill(HIST("h2_jet_phi_mcd_jet_phi_mcp_matchedgeopt_mcdetaconstraint"), jetMCD.phi(), jetMCP.phi(), weight);
-            registry.fill(HIST("h2_jet_pt_mcd_jet_pt_diff_matchedgeopt"), jetMCD.pt(), dpt / jetMCD.pt(), weight);
-            registry.fill(HIST("h2_jet_ntracks_mcd_jet_ntracks_mcp_matchedgeopt"), jetMCD.tracksIds().size(), jetMCP.tracksIds().size(), weight);
-          }
-          if (jetfindingutilities::isInEtaAcceptance(jetMCP, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
-            registry.fill(HIST("h2_jet_pt_mcd_jet_pt_mcp_matchedgeopt_mcpetaconstraint"), jetMCD.pt(), jetMCP.pt(), weight);
-            registry.fill(HIST("h2_jet_phi_mcd_jet_phi_mcp_matchedgeopt_mcpetaconstraint"), jetMCD.phi(), jetMCP.phi(), weight);
-            registry.fill(HIST("h2_jet_pt_mcp_jet_pt_diff_matchedgeopt"), jetMCP.pt(), dpt / jetMCP.pt(), weight);
-            registry.fill(HIST("h2_jet_pt_mcp_jet_pt_ratio_matchedgeopt"), jetMCP.pt(), jetMCD.pt() / jetMCP.pt(), weight);
-          }
-          registry.fill(HIST("h2_jet_eta_mcd_jet_eta_mcp_matchedpt"), jetMCD.eta(), jetMCP.eta(), weight);
-        }
-      }
-    }
-  }
-}
-
-template <typename TBase, typename TTag>
-void fillGeoMatchedCorrHistograms(TBase const& jetMCD, float rho, float mcrho = 0.0, float weight = 1.0)
-{
-  float pTHat = 10. / (std::pow(weight, 1.0 / pTHatExponent));
-  if (jetMCD.pt() > pTHatMaxMCD * pTHat) {
-    return;
-  }
-  if (jetMCD.has_matchedJetGeo()) {
-    for (const auto& jetMCP : jetMCD.template matchedJetGeo_as<std::decay_t<TTag>>()) {
-      if (jetMCP.pt() > pTHatMaxMCD * pTHat) {
-        continue;
-      }
-      if (jetMCD.r() == round(selectedJetsRadius * 100.0f)) {
-        double corrTagjetpt = jetMCP.pt() - (mcrho * jetMCP.area());
-        double corrBasejetpt = jetMCD.pt() - (rho * jetMCD.area());
-        double dcorrpt = corrTagjetpt - corrBasejetpt;
-        if (jetfindingutilities::isInEtaAcceptance(jetMCD, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
-          registry.fill(HIST("h2_jet_pt_mcd_jet_pt_mcp_matchedgeo_rhoareasubtracted_mcdetaconstraint"), corrBasejetpt, corrTagjetpt, weight);
-          registry.fill(HIST("h2_jet_pt_mcd_jet_pt_diff_matchedgeo_rhoareasubtracted"), corrBasejetpt, dcorrpt / corrBasejetpt, weight);
-        }
-        if (jetfindingutilities::isInEtaAcceptance(jetMCP, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
-          registry.fill(HIST("h2_jet_pt_mcd_jet_pt_mcp_matchedgeo_rhoareasubtracted_mcpetaconstraint"), corrBasejetpt, corrTagjetpt, weight);
-          registry.fill(HIST("h2_jet_pt_mcp_jet_pt_diff_matchedgeo_rhoareasubtracted"), corrTagjetpt, dcorrpt / corrTagjetpt, weight);
-          registry.fill(HIST("h2_jet_pt_mcp_jet_pt_ratio_matchedgeo_rhoareasubtracted"), corrTagjetpt, corrBasejetpt / corrTagjetpt, weight);
-        }
-      }
-    }
-  }
-}
-
-void processQC(soa::Filtered<aod::JetCollisions>::iterator const& collision,
-               soa::Filtered<soa::Join<aod::JetTracks, aod::JTrackExtras>> const& tracks)
-{
-  if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
-    return;
-  }
-  if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
-    return;
-  }
-  for (auto const& track : tracks) {
-    if (!jetderiveddatautilities::selectTrack(track, trackSelection)) {
-      continue;
-    }
-    fillTrackHistograms(track);
-  }
-}
-PROCESS_SWITCH(JetSpectraCharged, processQC, "collisions and track QC for Data and MCD", false);
-
-void processQCWeighted(soa::Join<aod::JetCollisions, aod::JMcCollisionLbs>::iterator const& collision,
-                       aod::JetMcCollisions const&,
-                       soa::Filtered<soa::Join<aod::JetTracks, aod::JTrackExtras>> const& tracks)
-{
-  float eventWeight = collision.weight();
-  if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
-    return;
-  }
-  if (std::abs(collision.posZ()) > vertexZCut) {
-    return;
-  }
-  for (auto const& track : tracks) {
-    if (!jetderiveddatautilities::selectTrack(track, trackSelection)) {
-      continue;
-    }
-    fillTrackHistograms(track, eventWeight);
-  }
-}
-PROCESS_SWITCH(JetSpectraCharged, processQCWeighted, "weighted collsions and tracks QC for MC", false);
-
-void processCollisions(soa::Filtered<aod::JetCollisions>::iterator const& collision)
-{
-  registry.fill(HIST("h_collisions"), 0.5);
-  if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
-    return;
-  }
-  registry.fill(HIST("h_collisions"), 1.5);
-  if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
-    return;
-  }
-  registry.fill(HIST("h_collisions"), 2.5);
-  registry.fill(HIST("h2_centrality_occupancy"), collision.centFT0M(), collision.trackOccupancyInTimeRange());
-  registry.fill(HIST("h_collisions_Zvertex"), collision.posZ());
-}
-PROCESS_SWITCH(JetSpectraCharged, processCollisions, "collisions Data and MCD", true);
-
-void processCollisionsWeighted(soa::Join<aod::JetCollisions, aod::JMcCollisionLbs>::iterator const& collision,
-                               aod::JetMcCollisions const&)
-{
-  if (!collision.has_mcCollision()) {
-    registry.fill(HIST("h_fakecollisions"), 0.5);
-  }
-  float eventWeight = collision.weight();
-  registry.fill(HIST("h_collisions"), 0.5);
-  registry.fill(HIST("h_collisions_weighted"), 0.5, eventWeight);
-  if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
-    return;
-  }
-  registry.fill(HIST("h_collisions"), 1.5);
-  registry.fill(HIST("h_collisions_weighted"), 1.5, eventWeight);
-  if (std::abs(collision.posZ()) > vertexZCut) {
-    return;
-  }
-  registry.fill(HIST("h_collisions"), 2.5);
-  registry.fill(HIST("h_collisions_weighted"), 2.5, eventWeight);
-  registry.fill(HIST("h2_centrality_occupancy"), collision.centFT0M(), collision.trackOccupancyInTimeRange());
-  registry.fill(HIST("h_collisions_Zvertex"), collision.posZ(), eventWeight);
-}
-PROCESS_SWITCH(JetSpectraCharged, processCollisionsWeighted, "weighted collsions for MCD", false);
-
-void processSpectraData(soa::Filtered<aod::JetCollisions>::iterator const& collision,
-                        soa::Join<aod::ChargedJets, aod::ChargedJetConstituents> const& jets,
-                        aod::JetTracks const&)
-{
-  if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
-    return;
-  }
-  if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
-    return;
-  }
-  for (auto const& jet : jets) {
-    if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
-      continue;
-    }
-    if (!isAcceptedJet<aod::JetTracks>(jet)) {
-      continue;
-    }
-    fillJetHistograms(jet, collision.centFT0M());
-  }
-}
-PROCESS_SWITCH(JetSpectraCharged, processSpectraData, "jet spectra for Data", false);
-
-void processSpectraMCD(soa::Filtered<aod::JetCollisions>::iterator const& collision,
-                       soa::Join<aod::ChargedMCDetectorLevelJets, aod::ChargedMCDetectorLevelJetConstituents> const& jets,
-                       aod::JetTracks const&)
-{
-  if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
-    return;
-  }
-  if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
-    return;
-  }
-  for (auto const& jet : jets) {
-    if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
-      continue;
-    }
-    if (!isAcceptedJet<aod::JetTracks>(jet)) {
-      continue;
-    }
-    fillJetHistograms(jet, collision.centFT0M());
-  }
-}
-PROCESS_SWITCH(JetSpectraCharged, processSpectraMCD, "jet spectra for MCD", false);
-
-void processSpectraAreaSubData(soa::Filtered<soa::Join<aod::JetCollisions, aod::BkgChargedRhos>>::iterator const& collision,
-                               soa::Join<aod::ChargedJets, aod::ChargedJetConstituents> const& jets,
-                               aod::JetTracks const&)
-{
-  if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
-    return;
-  }
-  if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
-    return;
-  }
-  for (auto const& jet : jets) {
-    if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
-      continue;
-    }
-    if (!isAcceptedJet<aod::JetTracks>(jet)) {
-      continue;
-    }
-    fillJetAreaSubHistograms(jet, collision.centFT0M(), collision.rho());
-  }
-}
-PROCESS_SWITCH(JetSpectraCharged, processSpectraAreaSubData, "jet spectra with rho-area subtraction for Data", false);
-
-void processSpectraAreaSubMCD(soa::Filtered<soa::Join<aod::JetCollisions, aod::BkgChargedRhos>>::iterator const& collision,
-                              soa::Join<aod::ChargedMCDetectorLevelJets, aod::ChargedMCDetectorLevelJetConstituents> const& jets,
-                              aod::JetTracks const&)
-{
-  if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
-    return;
-  }
-  if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
-    return;
-  }
-  for (auto const& jet : jets) {
-    if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
-      continue;
-    }
-    if (!isAcceptedJet<aod::JetTracks>(jet)) {
-      continue;
-    }
-    fillJetAreaSubHistograms(jet, collision.centFT0M(), collision.rho());
-  }
-}
-PROCESS_SWITCH(JetSpectraCharged, processSpectraAreaSubMCD, "jet spectra with rho-area subtraction for MCD", false);
-
-void processSpectraMCDWeighted(soa::Filtered<aod::JetCollisions>::iterator const& collision,
-                               soa::Join<aod::ChargedMCDetectorLevelJets, aod::ChargedMCDetectorLevelJetConstituents, aod::ChargedMCDetectorLevelJetEventWeights> const& jets,
-                               aod::JetTracks const&)
-{
-  if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
-    return;
-  }
-  if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
-    return;
-  }
-  for (auto const& jet : jets) {
-    if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
-      continue;
-    }
-    if (!isAcceptedJet<aod::JetTracks>(jet)) {
-      continue;
-    }
-    float jetweight = jet.eventWeight();
-    float pTHat = 10. / (std::pow(jetweight, 1.0 / pTHatExponent));
-    if (jet.pt() > pTHatMaxMCD * pTHat) {
+  // ¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´><(((º>
+  // Função para processar eventos que contém jatos com D0:
+  void
+    processD0JetsData(soa::Filtered<aod::JetCollisions>::iterator const& collision, // colisão filtrada
+                      D0Jets const& d0Jets,                                         // jatos com informações D0
+                      D0Candidates const& d0Candidates)                             // candidatos D0
+  // aod::JetTracks const& tracks) //tracks gerais
+  {
+    // Seleção de colisão (via seleção padrão do O2):
+    if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
       return;
     }
-    registry.fill(HIST("h_jet_phat"), pTHat);
-    registry.fill(HIST("h_jet_phat_weighted"), pTHat, jetweight);
-    fillJetHistograms(jet, collision.centFT0M(), jetweight);
-  }
-}
-PROCESS_SWITCH(JetSpectraCharged, processSpectraMCDWeighted, "jet finder QA mcd with weighted events", false);
-
-void processSpectraAreaSubMCP(McParticleCollision::iterator const& mccollision,
-                              soa::SmallGroups<aod::JetCollisionsMCD> const& collisions,
-                              soa::Join<aod::ChargedMCParticleLevelJets, aod::ChargedMCParticleLevelJetConstituents> const& jets,
-                              aod::JetParticles const&)
-{
-  bool mcLevelIsParticleLevel = true;
-
-  registry.fill(HIST("h_mcColl_counts_areasub"), 0.5);
-  if (std::abs(mccollision.posZ()) > vertexZCut) {
-    return;
-  }
-  registry.fill(HIST("h_mcColl_counts_areasub"), 1.5);
-  if (collisions.size() < 1) {
-    return;
-  }
-  registry.fill(HIST("h_mcColl_counts_areasub"), 2.5);
-  if (acceptSplitCollisions == 0 && collisions.size() > 1) {
-    return;
-  }
-  registry.fill(HIST("h_mcColl_counts_areasub"), 3.5);
-
-  bool hasSel8Coll = false;
-  bool centralityIsGood = false;
-  bool occupancyIsGood = false;
-  if (acceptSplitCollisions == 2) {
-    if (jetderiveddatautilities::selectCollision(collisions.begin(), eventSelectionBits, skipMBGapEvents)) {
-      hasSel8Coll = true;
+    // Corte de ocupação (remove eventos com ocupação anômala):
+    if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
+      return;
     }
-    if ((centralityMin < collisions.begin().centFT0M()) && (collisions.begin().centFT0M() < centralityMax)) {
-      centralityIsGood = true;
+
+    float centrality = collision.centFT0M(); // obtendo a centralidade
+
+    // Loop sobre todos os jatos D⁰ no evento:
+    for (auto const& jet : d0Jets) {
+      // Verificando aceitação em eta:
+      if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
+        continue;
+      }
+      // Aplicando cortes de aceitação em eta:
+      if (!isAcceptedJet<aod::JetTracks>(jet)) {
+        continue;
+      }
+
+      fillJetHistograms(jet, centrality);     // preenchendo histogramas gerais de jatos
+      fillD0JetHistograms(jet, d0Candidates); //, tracks); //preenchendo histrogramas de jatos D0
     }
-    if ((trackOccupancyInTimeRangeMin < collisions.begin().trackOccupancyInTimeRange()) && (collisions.begin().trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMax)) {
-      occupancyIsGood = true;
+  }
+
+  PROCESS_SWITCH(JetSpectraCharged, processD0JetsData, "jet spectra for Data with D0", false);
+  // ¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´><(((º>
+
+  template <typename TJets>
+  void fillMCPAreaSubHistograms(TJets const& jet, float rho = 0.0, float weight = 1.0)
+  {
+    float pTHat = 10. / (std::pow(weight, 1.0 / pTHatExponent));
+    if (jet.pt() > pTHatMaxMCP * pTHat || pTHat < pTHatAbsoluteMin) {
+      return;
     }
-  } else {
+    if (jet.r() == round(selectedJetsRadius * 100.0f)) {
+      // fill mcp jet histograms
+      double jetcorrpt = jet.pt() - (rho * jet.area());
+      registry.fill(HIST("h_jet_pt_part_rhoareasubtracted"), jetcorrpt, weight);
+      registry.fill(HIST("h3_jet_pt_jet_eta_jet_phi_part_rhoareasubtracted"), jetcorrpt, jet.eta(), jet.phi(), weight);
+      if (jetcorrpt > 0) {
+        registry.fill(HIST("h_jet_eta_part_rhoareasubtracted"), jet.eta(), weight);
+        registry.fill(HIST("h_jet_phi_part_rhoareasubtracted"), jet.phi(), weight);
+        registry.fill(HIST("h2_jet_pt_part_jet_area_part_rhoareasubtracted"), jetcorrpt, jet.area(), weight);
+        registry.fill(HIST("h2_jet_pt_part_jet_ntracks_part_rhoareasubtracted"), jetcorrpt, jet.tracksIds().size(), weight);
+      }
+    }
+  }
+
+  template <typename TJets>
+  void fillEventWiseConstituentSubtractedHistograms(TJets const& jet, float centrality, float weight = 1.0)
+  {
+    float pTHat = 10. / (std::pow(weight, 1.0 / pTHatExponent));
+    if (jet.pt() > pTHatMaxMCD * pTHat || pTHat < pTHatAbsoluteMin) {
+      return;
+    }
+    if (jet.r() == round(selectedJetsRadius * 100.0f)) {
+      registry.fill(HIST("h2_centrality_jet_pt_eventwiseconstituentsubtracted"), centrality, jet.pt(), weight);
+      registry.fill(HIST("jet_observables_eventwiseconstituentsubtracted"), jet.pt(), jet.eta(), jet.phi(), weight);
+    }
+  }
+
+  template <typename TTracks>
+  void fillTrackHistograms(TTracks const& track, float weight = 1.0)
+  {
+    registry.fill(HIST("h_track_pt"), track.pt(), weight);
+    registry.fill(HIST("h2_track_eta_track_phi"), track.eta(), track.phi(), weight);
+  }
+
+  template <typename TBase, typename TTag>
+  void fillMatchedHistograms(TBase const& jetMCD, float weight = 1.0)
+  {
+    float pTHat = 10. / (std::pow(weight, 1.0 / pTHatExponent));
+    if (jetMCD.pt() > pTHatMaxMCD * pTHat || pTHat < pTHatAbsoluteMin) {
+      return;
+    }
+    // fill geometry matched histograms
+    if (checkGeoMatched) {
+      if (jetMCD.has_matchedJetGeo()) {
+        for (const auto& jetMCP : jetMCD.template matchedJetGeo_as<std::decay_t<TTag>>()) {
+          if (jetMCP.pt() > pTHatMaxMCP * pTHat || pTHat < pTHatAbsoluteMin) {
+            continue;
+          }
+          if (jetMCD.r() == round(selectedJetsRadius * 100.0f)) {
+            double dpt = jetMCP.pt() - jetMCD.pt();
+            if (jetfindingutilities::isInEtaAcceptance(jetMCD, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
+              registry.fill(HIST("h2_jet_pt_mcd_jet_pt_mcp_matchedgeo_mcdetaconstraint"), jetMCD.pt(), jetMCP.pt(), weight);
+              registry.fill(HIST("h2_jet_phi_mcd_jet_phi_mcp_matchedgeo_mcdetaconstraint"), jetMCD.phi(), jetMCP.phi(), weight);
+              registry.fill(HIST("h2_jet_pt_mcd_jet_pt_diff_matchedgeo"), jetMCD.pt(), dpt / jetMCD.pt(), weight);
+              registry.fill(HIST("h2_jet_ntracks_mcd_jet_ntracks_mcp_matchedgeo"), jetMCD.tracksIds().size(), jetMCP.tracksIds().size(), weight);
+            }
+            if (jetfindingutilities::isInEtaAcceptance(jetMCP, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
+              registry.fill(HIST("h2_jet_pt_mcd_jet_pt_mcp_matchedgeo_mcpetaconstraint"), jetMCD.pt(), jetMCP.pt(), weight);
+              registry.fill(HIST("h2_jet_phi_mcd_jet_phi_mcp_matchedgeo_mcpetaconstraint"), jetMCD.phi(), jetMCP.phi(), weight);
+              registry.fill(HIST("h2_jet_pt_mcp_jet_pt_diff_matchedgeo"), jetMCP.pt(), dpt / jetMCP.pt(), weight);
+              registry.fill(HIST("h2_jet_pt_mcp_jet_pt_ratio_matchedgeo"), jetMCP.pt(), jetMCD.pt() / jetMCP.pt(), weight);
+            }
+            registry.fill(HIST("h2_jet_eta_mcd_jet_eta_mcp_matchedgeo"), jetMCD.eta(), jetMCP.eta(), weight);
+          }
+        }
+      }
+    }
+    // fill pt matched histograms
+    if (checkPtMatched) {
+      if (jetMCD.has_matchedJetPt()) {
+        for (const auto& jetMCP : jetMCD.template matchedJetPt_as<std::decay_t<TTag>>()) {
+          if (jetMCP.pt() > pTHatMaxMCP * pTHat) {
+            continue;
+          }
+          if (!jetfindingutilities::isInEtaAcceptance(jetMCP, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
+            continue;
+          }
+          if (jetMCD.r() == round(selectedJetsRadius * 100.0f)) {
+            double dpt = jetMCP.pt() - jetMCD.pt();
+            if (jetfindingutilities::isInEtaAcceptance(jetMCD, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
+              registry.fill(HIST("h2_jet_pt_mcd_jet_pt_mcp_matchedpt_mcdetaconstraint"), jetMCD.pt(), jetMCP.pt(), weight);
+              registry.fill(HIST("h2_jet_phi_mcd_jet_phi_mcp_matchedpt_mcdetaconstraint"), jetMCD.phi(), jetMCP.phi(), weight);
+              registry.fill(HIST("h2_jet_pt_mcd_jet_pt_diff_matchedpt"), jetMCD.pt(), dpt / jetMCD.pt(), weight);
+              registry.fill(HIST("h2_jet_ntracks_mcd_jet_ntracks_mcp_matchedpt"), jetMCD.tracksIds().size(), jetMCP.tracksIds().size(), weight);
+            }
+            if (jetfindingutilities::isInEtaAcceptance(jetMCP, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
+              registry.fill(HIST("h2_jet_pt_mcd_jet_pt_mcp_matchedpt_mcpetaconstraint"), jetMCD.pt(), jetMCP.pt(), weight);
+              registry.fill(HIST("h2_jet_phi_mcd_jet_phi_mcp_matchedpt_mcpetaconstraint"), jetMCD.phi(), jetMCP.phi(), weight);
+              registry.fill(HIST("h2_jet_pt_mcp_jet_pt_diff_matchedpt"), jetMCP.pt(), dpt / jetMCP.pt(), weight);
+              registry.fill(HIST("h2_jet_pt_mcp_jet_pt_ratio_matchedpt"), jetMCP.pt(), jetMCD.pt() / jetMCP.pt(), weight);
+            }
+            registry.fill(HIST("h2_jet_eta_mcd_jet_eta_mcp_matchedpt"), jetMCD.eta(), jetMCP.eta(), weight);
+          }
+        }
+      }
+    }
+    // fill geometry and pt histograms
+    if (checkGeoPtMatched) {
+      if (jetMCD.has_matchedJetGeo() && jetMCD.has_matchedJetPt()) {
+        for (const auto& jetMCP : jetMCD.template matchedJetGeo_as<std::decay_t<TTag>>()) {
+          if (jetMCP.pt() > pTHatMaxMCP * pTHat) {
+            continue;
+          }
+          if (!jetfindingutilities::isInEtaAcceptance(jetMCP, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
+            continue;
+          }
+          if (jetMCD.template matchedJetGeo_first_as<std::decay_t<TTag>>().globalIndex() == jetMCD.template matchedJetPt_first_as<std::decay_t<TTag>>().globalIndex()) { // not a good way to do this
+            double dpt = jetMCP.pt() - jetMCD.pt();
+            if (jetfindingutilities::isInEtaAcceptance(jetMCD, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
+              registry.fill(HIST("h2_jet_pt_mcd_jet_pt_mcp_matchedgeopt_mcdetaconstraint"), jetMCD.pt(), jetMCP.pt(), weight);
+              registry.fill(HIST("h2_jet_phi_mcd_jet_phi_mcp_matchedgeopt_mcdetaconstraint"), jetMCD.phi(), jetMCP.phi(), weight);
+              registry.fill(HIST("h2_jet_pt_mcd_jet_pt_diff_matchedgeopt"), jetMCD.pt(), dpt / jetMCD.pt(), weight);
+              registry.fill(HIST("h2_jet_ntracks_mcd_jet_ntracks_mcp_matchedgeopt"), jetMCD.tracksIds().size(), jetMCP.tracksIds().size(), weight);
+            }
+            if (jetfindingutilities::isInEtaAcceptance(jetMCP, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
+              registry.fill(HIST("h2_jet_pt_mcd_jet_pt_mcp_matchedgeopt_mcpetaconstraint"), jetMCD.pt(), jetMCP.pt(), weight);
+              registry.fill(HIST("h2_jet_phi_mcd_jet_phi_mcp_matchedgeopt_mcpetaconstraint"), jetMCD.phi(), jetMCP.phi(), weight);
+              registry.fill(HIST("h2_jet_pt_mcp_jet_pt_diff_matchedgeopt"), jetMCP.pt(), dpt / jetMCP.pt(), weight);
+              registry.fill(HIST("h2_jet_pt_mcp_jet_pt_ratio_matchedgeopt"), jetMCP.pt(), jetMCD.pt() / jetMCP.pt(), weight);
+            }
+            registry.fill(HIST("h2_jet_eta_mcd_jet_eta_mcp_matchedpt"), jetMCD.eta(), jetMCP.eta(), weight);
+          }
+        }
+      }
+    }
+  }
+
+  template <typename TBase, typename TTag>
+  void fillGeoMatchedCorrHistograms(TBase const& jetMCD, float rho, float mcrho = 0.0, float weight = 1.0)
+  {
+    float pTHat = 10. / (std::pow(weight, 1.0 / pTHatExponent));
+    if (jetMCD.pt() > pTHatMaxMCD * pTHat) {
+      return;
+    }
+    if (jetMCD.has_matchedJetGeo()) {
+      for (const auto& jetMCP : jetMCD.template matchedJetGeo_as<std::decay_t<TTag>>()) {
+        if (jetMCP.pt() > pTHatMaxMCD * pTHat) {
+          continue;
+        }
+        if (jetMCD.r() == round(selectedJetsRadius * 100.0f)) {
+          double corrTagjetpt = jetMCP.pt() - (mcrho * jetMCP.area());
+          double corrBasejetpt = jetMCD.pt() - (rho * jetMCD.area());
+          double dcorrpt = corrTagjetpt - corrBasejetpt;
+          if (jetfindingutilities::isInEtaAcceptance(jetMCD, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
+            registry.fill(HIST("h2_jet_pt_mcd_jet_pt_mcp_matchedgeo_rhoareasubtracted_mcdetaconstraint"), corrBasejetpt, corrTagjetpt, weight);
+            registry.fill(HIST("h2_jet_pt_mcd_jet_pt_diff_matchedgeo_rhoareasubtracted"), corrBasejetpt, dcorrpt / corrBasejetpt, weight);
+          }
+          if (jetfindingutilities::isInEtaAcceptance(jetMCP, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
+            registry.fill(HIST("h2_jet_pt_mcd_jet_pt_mcp_matchedgeo_rhoareasubtracted_mcpetaconstraint"), corrBasejetpt, corrTagjetpt, weight);
+            registry.fill(HIST("h2_jet_pt_mcp_jet_pt_diff_matchedgeo_rhoareasubtracted"), corrTagjetpt, dcorrpt / corrTagjetpt, weight);
+            registry.fill(HIST("h2_jet_pt_mcp_jet_pt_ratio_matchedgeo_rhoareasubtracted"), corrTagjetpt, corrBasejetpt / corrTagjetpt, weight);
+          }
+        }
+      }
+    }
+  }
+
+  void processQC(soa::Filtered<aod::JetCollisions>::iterator const& collision,
+                 soa::Filtered<soa::Join<aod::JetTracks, aod::JTrackExtras>> const& tracks)
+  {
+    if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
+      return;
+    }
+    if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
+      return;
+    }
+    for (auto const& track : tracks) {
+      if (!jetderiveddatautilities::selectTrack(track, trackSelection)) {
+        continue;
+      }
+      fillTrackHistograms(track);
+    }
+  }
+  PROCESS_SWITCH(JetSpectraCharged, processQC, "collisions and track QC for Data and MCD", false);
+
+  void processQCWeighted(soa::Join<aod::JetCollisions, aod::JMcCollisionLbs>::iterator const& collision,
+                         aod::JetMcCollisions const&,
+                         soa::Filtered<soa::Join<aod::JetTracks, aod::JTrackExtras>> const& tracks)
+  {
+    float eventWeight = collision.weight();
+    if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
+      return;
+    }
+    if (std::abs(collision.posZ()) > vertexZCut) {
+      return;
+    }
+    for (auto const& track : tracks) {
+      if (!jetderiveddatautilities::selectTrack(track, trackSelection)) {
+        continue;
+      }
+      fillTrackHistograms(track, eventWeight);
+    }
+  }
+  PROCESS_SWITCH(JetSpectraCharged, processQCWeighted, "weighted collsions and tracks QC for MC", false);
+
+  void processCollisions(soa::Filtered<aod::JetCollisions>::iterator const& collision)
+  {
+    registry.fill(HIST("h_collisions"), 0.5);
+    if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
+      return;
+    }
+    registry.fill(HIST("h_collisions"), 1.5);
+    if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
+      return;
+    }
+    registry.fill(HIST("h_collisions"), 2.5);
+    registry.fill(HIST("h2_centrality_occupancy"), collision.centFT0M(), collision.trackOccupancyInTimeRange());
+    registry.fill(HIST("h_collisions_Zvertex"), collision.posZ());
+  }
+  PROCESS_SWITCH(JetSpectraCharged, processCollisions, "collisions Data and MCD", true);
+
+  void processCollisionsWeighted(soa::Join<aod::JetCollisions, aod::JMcCollisionLbs>::iterator const& collision,
+                                 aod::JetMcCollisions const&)
+  {
+    if (!collision.has_mcCollision()) {
+      registry.fill(HIST("h_fakecollisions"), 0.5);
+    }
+    float eventWeight = collision.weight();
+    registry.fill(HIST("h_collisions"), 0.5);
+    registry.fill(HIST("h_collisions_weighted"), 0.5, eventWeight);
+    if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
+      return;
+    }
+    registry.fill(HIST("h_collisions"), 1.5);
+    registry.fill(HIST("h_collisions_weighted"), 1.5, eventWeight);
+    if (std::abs(collision.posZ()) > vertexZCut) {
+      return;
+    }
+    registry.fill(HIST("h_collisions"), 2.5);
+    registry.fill(HIST("h_collisions_weighted"), 2.5, eventWeight);
+    registry.fill(HIST("h2_centrality_occupancy"), collision.centFT0M(), collision.trackOccupancyInTimeRange());
+    registry.fill(HIST("h_collisions_Zvertex"), collision.posZ(), eventWeight);
+  }
+  PROCESS_SWITCH(JetSpectraCharged, processCollisionsWeighted, "weighted collsions for MCD", false);
+
+  void processSpectraData(soa::Filtered<aod::JetCollisions>::iterator const& collision,
+                          soa::Join<aod::ChargedJets, aod::ChargedJetConstituents> const& jets,
+                          aod::JetTracks const&)
+  {
+    if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
+      return;
+    }
+    if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
+      return;
+    }
+    for (auto const& jet : jets) {
+      if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
+        continue;
+      }
+      if (!isAcceptedJet<aod::JetTracks>(jet)) {
+        continue;
+      }
+      fillJetHistograms(jet, collision.centFT0M());
+    }
+  }
+  PROCESS_SWITCH(JetSpectraCharged, processSpectraData, "jet spectra for Data", false);
+
+  void processSpectraMCD(soa::Filtered<aod::JetCollisions>::iterator const& collision,
+                         soa::Join<aod::ChargedMCDetectorLevelJets, aod::ChargedMCDetectorLevelJetConstituents> const& jets,
+                         aod::JetTracks const&)
+  {
+    if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
+      return;
+    }
+    if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
+      return;
+    }
+    for (auto const& jet : jets) {
+      if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
+        continue;
+      }
+      if (!isAcceptedJet<aod::JetTracks>(jet)) {
+        continue;
+      }
+      fillJetHistograms(jet, collision.centFT0M());
+    }
+  }
+  PROCESS_SWITCH(JetSpectraCharged, processSpectraMCD, "jet spectra for MCD", false);
+
+  void processSpectraAreaSubData(soa::Filtered<soa::Join<aod::JetCollisions, aod::BkgChargedRhos>>::iterator const& collision,
+                                 soa::Join<aod::ChargedJets, aod::ChargedJetConstituents> const& jets,
+                                 aod::JetTracks const&)
+  {
+    if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
+      return;
+    }
+    if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
+      return;
+    }
+    for (auto const& jet : jets) {
+      if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
+        continue;
+      }
+      if (!isAcceptedJet<aod::JetTracks>(jet)) {
+        continue;
+      }
+      fillJetAreaSubHistograms(jet, collision.centFT0M(), collision.rho());
+    }
+  }
+  PROCESS_SWITCH(JetSpectraCharged, processSpectraAreaSubData, "jet spectra with rho-area subtraction for Data", false);
+
+  void processSpectraAreaSubMCD(soa::Filtered<soa::Join<aod::JetCollisions, aod::BkgChargedRhos>>::iterator const& collision,
+                                soa::Join<aod::ChargedMCDetectorLevelJets, aod::ChargedMCDetectorLevelJetConstituents> const& jets,
+                                aod::JetTracks const&)
+  {
+    if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
+      return;
+    }
+    if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
+      return;
+    }
+    for (auto const& jet : jets) {
+      if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
+        continue;
+      }
+      if (!isAcceptedJet<aod::JetTracks>(jet)) {
+        continue;
+      }
+      fillJetAreaSubHistograms(jet, collision.centFT0M(), collision.rho());
+    }
+  }
+  PROCESS_SWITCH(JetSpectraCharged, processSpectraAreaSubMCD, "jet spectra with rho-area subtraction for MCD", false);
+
+  void processSpectraMCDWeighted(soa::Filtered<aod::JetCollisions>::iterator const& collision,
+                                 soa::Join<aod::ChargedMCDetectorLevelJets, aod::ChargedMCDetectorLevelJetConstituents, aod::ChargedMCDetectorLevelJetEventWeights> const& jets,
+                                 aod::JetTracks const&)
+  {
+    if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
+      return;
+    }
+    if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
+      return;
+    }
+    for (auto const& jet : jets) {
+      if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
+        continue;
+      }
+      if (!isAcceptedJet<aod::JetTracks>(jet)) {
+        continue;
+      }
+      float jetweight = jet.eventWeight();
+      float pTHat = 10. / (std::pow(jetweight, 1.0 / pTHatExponent));
+      if (jet.pt() > pTHatMaxMCD * pTHat) {
+        return;
+      }
+      registry.fill(HIST("h_jet_phat"), pTHat);
+      registry.fill(HIST("h_jet_phat_weighted"), pTHat, jetweight);
+      fillJetHistograms(jet, collision.centFT0M(), jetweight);
+    }
+  }
+  PROCESS_SWITCH(JetSpectraCharged, processSpectraMCDWeighted, "jet finder QA mcd with weighted events", false);
+
+  void processSpectraAreaSubMCP(McParticleCollision::iterator const& mccollision,
+                                soa::SmallGroups<aod::JetCollisionsMCD> const& collisions,
+                                soa::Join<aod::ChargedMCParticleLevelJets, aod::ChargedMCParticleLevelJetConstituents> const& jets,
+                                aod::JetParticles const&)
+  {
+    bool mcLevelIsParticleLevel = true;
+
+    registry.fill(HIST("h_mcColl_counts_areasub"), 0.5);
+    if (std::abs(mccollision.posZ()) > vertexZCut) {
+      return;
+    }
+    registry.fill(HIST("h_mcColl_counts_areasub"), 1.5);
+    if (collisions.size() < 1) {
+      return;
+    }
+    registry.fill(HIST("h_mcColl_counts_areasub"), 2.5);
+    if (acceptSplitCollisions == 0 && collisions.size() > 1) {
+      return;
+    }
+    registry.fill(HIST("h_mcColl_counts_areasub"), 3.5);
+
+    bool hasSel8Coll = false;
+    bool centralityIsGood = false;
+    bool occupancyIsGood = false;
+    if (acceptSplitCollisions == 2) {
+      if (jetderiveddatautilities::selectCollision(collisions.begin(), eventSelectionBits, skipMBGapEvents)) {
+        hasSel8Coll = true;
+      }
+      if ((centralityMin < collisions.begin().centFT0M()) && (collisions.begin().centFT0M() < centralityMax)) {
+        centralityIsGood = true;
+      }
+      if ((trackOccupancyInTimeRangeMin < collisions.begin().trackOccupancyInTimeRange()) && (collisions.begin().trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMax)) {
+        occupancyIsGood = true;
+      }
+    } else {
+      for (auto const& collision : collisions) {
+        if (jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
+          hasSel8Coll = true;
+        }
+        if ((centralityMin < collision.centFT0M()) && (collision.centFT0M() < centralityMax)) {
+          centralityIsGood = true;
+        }
+        if ((trackOccupancyInTimeRangeMin < collision.trackOccupancyInTimeRange()) && (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMax)) {
+          occupancyIsGood = true;
+        }
+      }
+    }
+    if (!hasSel8Coll) {
+      return;
+    }
+    registry.fill(HIST("h_mcColl_counts_areasub"), 4.5);
+
+    if (!centralityIsGood) {
+      return;
+    }
+    registry.fill(HIST("h_mcColl_counts_areasub"), 5.5);
+
+    if (!occupancyIsGood) {
+      return;
+    }
+    registry.fill(HIST("h_mcColl_counts_areasub"), 6.5);
+    registry.fill(HIST("h_mcColl_rho"), mccollision.rho());
+    for (auto const& jet : jets) {
+      if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
+        continue;
+      }
+      if (!isAcceptedJet<aod::JetParticles>(jet, mcLevelIsParticleLevel)) {
+        continue;
+      }
+      fillMCPAreaSubHistograms(jet, mccollision.rho());
+    }
+  }
+  PROCESS_SWITCH(JetSpectraCharged, processSpectraAreaSubMCP, "jet spectra with area-based subtraction for MC particle level", false);
+
+  void processSpectraMCP(aod::JetMcCollision const& mccollision,
+                         soa::SmallGroups<aod::JetCollisionsMCD> const& collisions,
+                         soa::Join<aod::ChargedMCParticleLevelJets, aod::ChargedMCParticleLevelJetConstituents> const& jets,
+                         aod::JetParticles const&)
+  {
+    bool mcLevelIsParticleLevel = true;
+
+    registry.fill(HIST("h_mcColl_counts"), 0.5);
+    if (std::abs(mccollision.posZ()) > vertexZCut) {
+      return;
+    }
+    registry.fill(HIST("h_mcColl_counts"), 1.5);
+    if (collisions.size() < 1) {
+      return;
+    }
+    registry.fill(HIST("h_mcColl_counts"), 2.5);
+
+    bool hasSel8Coll = false;
+    bool centralityIsGood = false;
+    bool occupancyIsGood = false;
     for (auto const& collision : collisions) {
       if (jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
         hasSel8Coll = true;
@@ -920,274 +979,214 @@ void processSpectraAreaSubMCP(McParticleCollision::iterator const& mccollision,
         occupancyIsGood = true;
       }
     }
-  }
-  if (!hasSel8Coll) {
-    return;
-  }
-  registry.fill(HIST("h_mcColl_counts_areasub"), 4.5);
-
-  if (!centralityIsGood) {
-    return;
-  }
-  registry.fill(HIST("h_mcColl_counts_areasub"), 5.5);
-
-  if (!occupancyIsGood) {
-    return;
-  }
-  registry.fill(HIST("h_mcColl_counts_areasub"), 6.5);
-  registry.fill(HIST("h_mcColl_rho"), mccollision.rho());
-  for (auto const& jet : jets) {
-    if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
-      continue;
+    if (!hasSel8Coll) {
+      return;
     }
-    if (!isAcceptedJet<aod::JetParticles>(jet, mcLevelIsParticleLevel)) {
-      continue;
+    registry.fill(HIST("h_mcColl_counts"), 3.5);
+    if (!centralityIsGood) {
+      return;
     }
-    fillMCPAreaSubHistograms(jet, mccollision.rho());
-  }
-}
-PROCESS_SWITCH(JetSpectraCharged, processSpectraAreaSubMCP, "jet spectra with area-based subtraction for MC particle level", false);
-
-void processSpectraMCP(aod::JetMcCollision const& mccollision,
-                       soa::SmallGroups<aod::JetCollisionsMCD> const& collisions,
-                       soa::Join<aod::ChargedMCParticleLevelJets, aod::ChargedMCParticleLevelJetConstituents> const& jets,
-                       aod::JetParticles const&)
-{
-  bool mcLevelIsParticleLevel = true;
-
-  registry.fill(HIST("h_mcColl_counts"), 0.5);
-  if (std::abs(mccollision.posZ()) > vertexZCut) {
-    return;
-  }
-  registry.fill(HIST("h_mcColl_counts"), 1.5);
-  if (collisions.size() < 1) {
-    return;
-  }
-  registry.fill(HIST("h_mcColl_counts"), 2.5);
-
-  bool hasSel8Coll = false;
-  bool centralityIsGood = false;
-  bool occupancyIsGood = false;
-  for (auto const& collision : collisions) {
-    if (jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
-      hasSel8Coll = true;
+    registry.fill(HIST("h_mcColl_counts"), 4.5);
+    if (!occupancyIsGood) {
+      return;
     }
-    if ((centralityMin < collision.centFT0M()) && (collision.centFT0M() < centralityMax)) {
-      centralityIsGood = true;
-    }
-    if ((trackOccupancyInTimeRangeMin < collision.trackOccupancyInTimeRange()) && (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMax)) {
-      occupancyIsGood = true;
+    registry.fill(HIST("h_mcColl_counts"), 5.5);
+    registry.fill(HIST("h_mc_zvertex"), mccollision.posZ());
+
+    for (auto const& jet : jets) {
+      if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
+        continue;
+      }
+      if (!isAcceptedJet<aod::JetParticles>(jet, mcLevelIsParticleLevel)) {
+        continue;
+      }
+      fillMCPHistograms(jet);
     }
   }
-  if (!hasSel8Coll) {
-    return;
-  }
-  registry.fill(HIST("h_mcColl_counts"), 3.5);
-  if (!centralityIsGood) {
-    return;
-  }
-  registry.fill(HIST("h_mcColl_counts"), 4.5);
-  if (!occupancyIsGood) {
-    return;
-  }
-  registry.fill(HIST("h_mcColl_counts"), 5.5);
-  registry.fill(HIST("h_mc_zvertex"), mccollision.posZ());
+  PROCESS_SWITCH(JetSpectraCharged, processSpectraMCP, "jet spectra for MC particle level", false);
 
-  for (auto const& jet : jets) {
-    if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
-      continue;
-    }
-    if (!isAcceptedJet<aod::JetParticles>(jet, mcLevelIsParticleLevel)) {
-      continue;
-    }
-    fillMCPHistograms(jet);
-  }
-}
-PROCESS_SWITCH(JetSpectraCharged, processSpectraMCP, "jet spectra for MC particle level", false);
+  void processSpectraMCPWeighted(aod::JetMcCollision const& mccollision,
+                                 soa::SmallGroups<aod::JetCollisionsMCD> const& collisions,
+                                 soa::Join<aod::ChargedMCParticleLevelJets, aod::ChargedMCParticleLevelJetConstituents, aod::ChargedMCParticleLevelJetEventWeights> const& jets,
+                                 aod::JetParticles const&)
+  {
+    bool mcLevelIsParticleLevel = true;
+    float eventWeight = mccollision.weight();
 
-void processSpectraMCPWeighted(aod::JetMcCollision const& mccollision,
-                               soa::SmallGroups<aod::JetCollisionsMCD> const& collisions,
-                               soa::Join<aod::ChargedMCParticleLevelJets, aod::ChargedMCParticleLevelJetConstituents, aod::ChargedMCParticleLevelJetEventWeights> const& jets,
-                               aod::JetParticles const&)
-{
-  bool mcLevelIsParticleLevel = true;
-  float eventWeight = mccollision.weight();
-
-  registry.fill(HIST("h_mcColl_counts"), 0.5);
-  registry.fill(HIST("h_mcColl_counts_weight"), 0.5, eventWeight);
-  if (std::abs(mccollision.posZ()) > vertexZCut) {
-    return;
-  }
-  registry.fill(HIST("h_mcColl_counts"), 1.5);
-  registry.fill(HIST("h_mcColl_counts_weight"), 1.5, eventWeight);
-  if (collisions.size() < 1) {
-    return;
-  }
-  registry.fill(HIST("h_mcColl_counts"), 2.5);
-  registry.fill(HIST("h_mcColl_counts_weight"), 2.5, eventWeight);
-  registry.fill(HIST("h_mc_zvertex"), mccollision.posZ(), eventWeight);
-
-  bool hasSel8Coll = false;
-  for (auto const& collision : collisions) {
-    if (jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
-      hasSel8Coll = true;
+    registry.fill(HIST("h_mcColl_counts"), 0.5);
+    registry.fill(HIST("h_mcColl_counts_weight"), 0.5, eventWeight);
+    if (std::abs(mccollision.posZ()) > vertexZCut) {
+      return;
     }
-  }
-  if (!hasSel8Coll) {
-    return;
-  }
-  registry.fill(HIST("h_mcColl_counts"), 3.5);
-  registry.fill(HIST("h_mcColl_counts_weight"), 3.5, eventWeight);
+    registry.fill(HIST("h_mcColl_counts"), 1.5);
+    registry.fill(HIST("h_mcColl_counts_weight"), 1.5, eventWeight);
+    if (collisions.size() < 1) {
+      return;
+    }
+    registry.fill(HIST("h_mcColl_counts"), 2.5);
+    registry.fill(HIST("h_mcColl_counts_weight"), 2.5, eventWeight);
+    registry.fill(HIST("h_mc_zvertex"), mccollision.posZ(), eventWeight);
 
-  for (auto const& jet : jets) {
-    if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
-      continue;
-    }
-    if (!isAcceptedJet<aod::JetParticles>(jet, mcLevelIsParticleLevel)) {
-      continue;
-    }
-    float jetweight = jet.eventWeight();
-    double pTHat = 10. / (std::pow(jetweight, 1.0 / pTHatExponent));
-    for (int N = 1; N < 21; N++) {
-      if (jet.pt() < N * 0.25 * pTHat && jet.r() == round(selectedJetsRadius * 100.0f)) {
-        registry.fill(HIST("h2_jet_ptcut_part"), jet.pt(), N * 0.25, jetweight);
+    bool hasSel8Coll = false;
+    for (auto const& collision : collisions) {
+      if (jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
+        hasSel8Coll = true;
       }
     }
-    registry.fill(HIST("h_jet_phat_part_weighted"), pTHat, jetweight);
-    fillMCPHistograms(jet, jetweight);
-  }
-}
-PROCESS_SWITCH(JetSpectraCharged, processSpectraMCPWeighted, "jet spectra for MC particle level weighted", false);
+    if (!hasSel8Coll) {
+      return;
+    }
+    registry.fill(HIST("h_mcColl_counts"), 3.5);
+    registry.fill(HIST("h_mcColl_counts_weight"), 3.5, eventWeight);
 
-void processEvtWiseConstSubJetsData(soa::Filtered<aod::JetCollisions>::iterator const& collision,
-                                    soa::Join<aod::ChargedEventWiseSubtractedJets, aod::ChargedEventWiseSubtractedJetConstituents> const& jets,
-                                    aod::JetTracksSub const&)
-{
-  if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
-    return;
-  }
-  if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
-    return;
-  }
-  for (auto const& jet : jets) {
-    if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
-      continue;
+    for (auto const& jet : jets) {
+      if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
+        continue;
+      }
+      if (!isAcceptedJet<aod::JetParticles>(jet, mcLevelIsParticleLevel)) {
+        continue;
+      }
+      float jetweight = jet.eventWeight();
+      double pTHat = 10. / (std::pow(jetweight, 1.0 / pTHatExponent));
+      for (int N = 1; N < 21; N++) {
+        if (jet.pt() < N * 0.25 * pTHat && jet.r() == round(selectedJetsRadius * 100.0f)) {
+          registry.fill(HIST("h2_jet_ptcut_part"), jet.pt(), N * 0.25, jetweight);
+        }
+      }
+      registry.fill(HIST("h_jet_phat_part_weighted"), pTHat, jetweight);
+      fillMCPHistograms(jet, jetweight);
     }
-    if (!isAcceptedJet<aod::JetTracksSub>(jet)) {
-      continue;
-    }
-    fillEventWiseConstituentSubtractedHistograms(jet, collision.centFT0M());
   }
-}
-PROCESS_SWITCH(JetSpectraCharged, processEvtWiseConstSubJetsData, "jet spectrum for eventwise constituent-subtracted jets data", false);
+  PROCESS_SWITCH(JetSpectraCharged, processSpectraMCPWeighted, "jet spectra for MC particle level weighted", false);
 
-void processEvtWiseConstSubJetsMCD(soa::Filtered<aod::JetCollisions>::iterator const& collision,
-                                   soa::Join<aod::ChargedMCDetectorLevelEventWiseSubtractedJets, aod::ChargedMCDetectorLevelEventWiseSubtractedJetConstituents> const& jets,
-                                   aod::JetTracksSub const&)
-{
-  if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
-    return;
-  }
-  if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
-    return;
-  }
-  for (auto const& jet : jets) {
-    if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
-      continue;
+  void processEvtWiseConstSubJetsData(soa::Filtered<aod::JetCollisions>::iterator const& collision,
+                                      soa::Join<aod::ChargedEventWiseSubtractedJets, aod::ChargedEventWiseSubtractedJetConstituents> const& jets,
+                                      aod::JetTracksSub const&)
+  {
+    if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
+      return;
     }
-    if (!isAcceptedJet<aod::JetTracksSub>(jet)) {
-      continue;
-    }
-    fillEventWiseConstituentSubtractedHistograms(jet, collision.centFT0M());
-  }
-}
-PROCESS_SWITCH(JetSpectraCharged, processEvtWiseConstSubJetsMCD, "jet spectrum for eventwise constituent-subtracted mcd jets", false);
-
-void processJetsMatched(soa::Filtered<aod::JetCollisions>::iterator const& collision,
-                        ChargedMCDMatchedJets const& mcdjets,
-                        ChargedMCPMatchedJets const&,
-                        aod::JetTracks const&, aod::JetParticles const&)
-{
-  if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
-    return;
-  }
-  if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
-    return;
-  }
-
-  for (const auto& mcdjet : mcdjets) {
-    if (!isAcceptedJet<aod::JetTracks>(mcdjet)) {
-      continue;
-    }
-    fillMatchedHistograms<ChargedMCDMatchedJets::iterator, ChargedMCPMatchedJets>(mcdjet);
-  }
-}
-PROCESS_SWITCH(JetSpectraCharged, processJetsMatched, "matched mcp and mcd jets", false);
-
-void processJetsMatchedWeighted(soa::Filtered<aod::JetCollisions>::iterator const& collision,
-                                ChargedMCDMatchedJetsWeighted const& mcdjets,
-                                ChargedMCPMatchedJetsWeighted const&,
-                                aod::JetTracks const&, aod::JetParticles const&)
-{
-  if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
-    return;
-  }
-  if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
-    return;
-  }
-  for (const auto& mcdjet : mcdjets) {
-    if (!isAcceptedJet<aod::JetTracks>(mcdjet)) {
-      continue;
-    }
-    fillMatchedHistograms<ChargedMCDMatchedJetsWeighted::iterator, ChargedMCPMatchedJetsWeighted>(mcdjet, mcdjet.eventWeight());
-  }
-}
-PROCESS_SWITCH(JetSpectraCharged, processJetsMatchedWeighted, "matched mcp and mcd jets with weighted events", false);
-
-void processJetsMatchedSubtracted(McParticleCollision::iterator const& mccollision,
-                                  soa::SmallGroups<soa::Join<aod::JetCollisionsMCD, aod::BkgChargedRhos>> const& collisions,
-                                  ChargedMCDMatchedJets const& mcdjets,
-                                  ChargedMCPMatchedJets const&,
-                                  aod::JetTracks const&, aod::JetParticles const&)
-{
-  registry.fill(HIST("h_mc_collisions_matched"), 0.5);
-  if (mccollision.size() < 1) {
-    return;
-  }
-  registry.fill(HIST("h_mc_collisions_matched"), 1.5);
-  if (!(std::abs(mccollision.posZ()) < vertexZCut)) {
-    return;
-  }
-  registry.fill(HIST("h_mc_collisions_matched"), 2.5);
-  double mcrho = mccollision.rho();
-  registry.fill(HIST("h_mc_rho_matched"), mcrho);
-  for (const auto& collision : collisions) {
-    registry.fill(HIST("h_mcd_events_matched"), 0.5);
-    if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents) || !(std::abs(collision.posZ()) < vertexZCut)) {
-      continue;
-    }
-    registry.fill(HIST("h_mcd_events_matched"), 1.5);
-    if (collision.centFT0M() < centralityMin || collision.centFT0M() > centralityMax) {
-      continue;
-    }
-    registry.fill(HIST("h_mcd_events_matched"), 2.5);
     if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
       return;
     }
-    registry.fill(HIST("h_mcd_events_matched"), 3.5);
+    for (auto const& jet : jets) {
+      if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
+        continue;
+      }
+      if (!isAcceptedJet<aod::JetTracksSub>(jet)) {
+        continue;
+      }
+      fillEventWiseConstituentSubtractedHistograms(jet, collision.centFT0M());
+    }
+  }
+  PROCESS_SWITCH(JetSpectraCharged, processEvtWiseConstSubJetsData, "jet spectrum for eventwise constituent-subtracted jets data", false);
 
-    auto collmcdjets = mcdjets.sliceBy(mcdjetsPerJCollision, collision.globalIndex());
-    for (const auto& mcdjet : collmcdjets) {
+  void processEvtWiseConstSubJetsMCD(soa::Filtered<aod::JetCollisions>::iterator const& collision,
+                                     soa::Join<aod::ChargedMCDetectorLevelEventWiseSubtractedJets, aod::ChargedMCDetectorLevelEventWiseSubtractedJetConstituents> const& jets,
+                                     aod::JetTracksSub const&)
+  {
+    if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
+      return;
+    }
+    if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
+      return;
+    }
+    for (auto const& jet : jets) {
+      if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
+        continue;
+      }
+      if (!isAcceptedJet<aod::JetTracksSub>(jet)) {
+        continue;
+      }
+      fillEventWiseConstituentSubtractedHistograms(jet, collision.centFT0M());
+    }
+  }
+  PROCESS_SWITCH(JetSpectraCharged, processEvtWiseConstSubJetsMCD, "jet spectrum for eventwise constituent-subtracted mcd jets", false);
+
+  void processJetsMatched(soa::Filtered<aod::JetCollisions>::iterator const& collision,
+                          ChargedMCDMatchedJets const& mcdjets,
+                          ChargedMCPMatchedJets const&,
+                          aod::JetTracks const&, aod::JetParticles const&)
+  {
+    if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
+      return;
+    }
+    if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
+      return;
+    }
+
+    for (const auto& mcdjet : mcdjets) {
       if (!isAcceptedJet<aod::JetTracks>(mcdjet)) {
         continue;
       }
-      fillGeoMatchedCorrHistograms<ChargedMCDMatchedJets::iterator, ChargedMCPMatchedJets>(mcdjet, collision.rho(), mcrho);
+      fillMatchedHistograms<ChargedMCDMatchedJets::iterator, ChargedMCPMatchedJets>(mcdjet);
     }
   }
-}
-PROCESS_SWITCH(JetSpectraCharged, processJetsMatchedSubtracted, "matched mcp and mcd jets after subtraction", false);
-}
-;
+  PROCESS_SWITCH(JetSpectraCharged, processJetsMatched, "matched mcp and mcd jets", false);
+
+  void processJetsMatchedWeighted(soa::Filtered<aod::JetCollisions>::iterator const& collision,
+                                  ChargedMCDMatchedJetsWeighted const& mcdjets,
+                                  ChargedMCPMatchedJetsWeighted const&,
+                                  aod::JetTracks const&, aod::JetParticles const&)
+  {
+    if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
+      return;
+    }
+    if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
+      return;
+    }
+    for (const auto& mcdjet : mcdjets) {
+      if (!isAcceptedJet<aod::JetTracks>(mcdjet)) {
+        continue;
+      }
+      fillMatchedHistograms<ChargedMCDMatchedJetsWeighted::iterator, ChargedMCPMatchedJetsWeighted>(mcdjet, mcdjet.eventWeight());
+    }
+  }
+  PROCESS_SWITCH(JetSpectraCharged, processJetsMatchedWeighted, "matched mcp and mcd jets with weighted events", false);
+
+  void processJetsMatchedSubtracted(McParticleCollision::iterator const& mccollision,
+                                    soa::SmallGroups<soa::Join<aod::JetCollisionsMCD, aod::BkgChargedRhos>> const& collisions,
+                                    ChargedMCDMatchedJets const& mcdjets,
+                                    ChargedMCPMatchedJets const&,
+                                    aod::JetTracks const&, aod::JetParticles const&)
+  {
+    registry.fill(HIST("h_mc_collisions_matched"), 0.5);
+    if (mccollision.size() < 1) {
+      return;
+    }
+    registry.fill(HIST("h_mc_collisions_matched"), 1.5);
+    if (!(std::abs(mccollision.posZ()) < vertexZCut)) {
+      return;
+    }
+    registry.fill(HIST("h_mc_collisions_matched"), 2.5);
+    double mcrho = mccollision.rho();
+    registry.fill(HIST("h_mc_rho_matched"), mcrho);
+    for (const auto& collision : collisions) {
+      registry.fill(HIST("h_mcd_events_matched"), 0.5);
+      if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents) || !(std::abs(collision.posZ()) < vertexZCut)) {
+        continue;
+      }
+      registry.fill(HIST("h_mcd_events_matched"), 1.5);
+      if (collision.centFT0M() < centralityMin || collision.centFT0M() > centralityMax) {
+        continue;
+      }
+      registry.fill(HIST("h_mcd_events_matched"), 2.5);
+      if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
+        return;
+      }
+      registry.fill(HIST("h_mcd_events_matched"), 3.5);
+
+      auto collmcdjets = mcdjets.sliceBy(mcdjetsPerJCollision, collision.globalIndex());
+      for (const auto& mcdjet : collmcdjets) {
+        if (!isAcceptedJet<aod::JetTracks>(mcdjet)) {
+          continue;
+        }
+        fillGeoMatchedCorrHistograms<ChargedMCDMatchedJets::iterator, ChargedMCPMatchedJets>(mcdjet, collision.rho(), mcrho);
+      }
+    }
+  }
+  PROCESS_SWITCH(JetSpectraCharged, processJetsMatchedSubtracted, "matched mcp and mcd jets after subtraction", false);
+};
 
 WorkflowSpec defineDataProcessing(ConfigContext const& cfgc)
 {
