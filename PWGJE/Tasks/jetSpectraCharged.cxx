@@ -471,13 +471,12 @@ struct JetSpectraCharged {
         registry.fill(HIST("h_d0_jet_pt_ratio"), d0.pt() / jet.pt(), weight);
       }
     }
-  }
-  // Se o jato contém D0, preenche o histograma:
-  if (hasD0InJet) {
-    registry.fill(HIST("h_jet_pt_with_d0"), jet.pt(), weight);
+    // Se o jato contém D0, preenche o histograma:
+    if (hasD0InJet) {
+      registry.fill(HIST("h_jet_pt_with_d0"), jet.pt(), weight);
+    }
   }
 }
-
 // ¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´><(((º>
 // Função para processar eventos que contém jatos com D0:
 void
