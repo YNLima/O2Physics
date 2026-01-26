@@ -458,13 +458,13 @@ struct JetSpectraCharged {
         continue; // corte em eta
 
       constexpr float pdgMassD0 = 1.86483f;
-      if (std::abs(d0.mKPi() - pdgMassD0) > d0MassWindow)
+      if (std::abs(d0.m() - pdgMassD0) > d0MassWindow)
         continue;
 
       hasD0InJet = true; // marcando que o jato tem D0 válido
 
       // Preenchendo os histogramas de D0:
-      registry.fill(HIST("h_d0_mass"), d0.mKPi(), weight);
+      registry.fill(HIST("h_d0_mass"), d0.m(), weight);
       registry.fill(HIST("h_d0_pt"), d0.pt(), weight);
       registry.fill(HIST("h_d0_eta"), d0.eta(), weight);
       if (jet.pt() > 0) { // para a razão pTD0/pTjet
