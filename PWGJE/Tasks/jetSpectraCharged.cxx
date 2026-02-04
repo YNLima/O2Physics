@@ -512,7 +512,7 @@ struct JetSpectraCharged {
     }
   }
 
-  PROCESS_SWITCH(JetSpectraCharged, processD0JetsData, "jet spectra for Data with D0", false);
+  PROCESS_SWITCH(JetSpectraCharged, processD0JetsData, "jet spectra for Data with D0", true);
   // ¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´><(((º>
 
   template <typename TJets>
