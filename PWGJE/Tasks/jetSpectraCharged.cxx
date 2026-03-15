@@ -422,6 +422,21 @@ struct JetSpectraCharged {
     }
   }
 
+  void processDebugSelector(
+    soa::Join<aod::HfCand2ProngWPid, aod::HfSelD0> const& candidates)
+  {
+    int nSel = 0;
+    int nTotal = 0;
+    for (auto& cand : candidates) {
+      nTotal++;
+      if (cand.isSelD0() || cand.isSelD0bar()) {
+        nSel++;
+      }
+    }
+    LOGF(info, "DEBUG - Selector: %d/%d candidatos selecionados", nSel, nTotal);
+  }
+  PROCESS_SWITCH(JetSpectraCharged, processDebugSelector, "debug", false);
+
   // ¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´><(((º>
   // BLOCK 5 (for D0 jets):
 
