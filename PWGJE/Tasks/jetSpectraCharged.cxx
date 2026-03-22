@@ -73,8 +73,8 @@ struct JetSpectraCharged {
   // using HfCandidates = soa::Join<aod::HfCand2Prong, aod::HfSelD0>;
   // using HfMCCandidates = soa::Join<HfCandidates, aod::HfCand2ProngMcRec>;
   using D0Jets = soa::Join<aod::D0ChargedJets, aod::D0ChargedJetConstituents>;
-  using D0Candidates = soa::Join<aod::CandidatesD0Data, aod::HfSelD0>;
-
+  //  using D0Candidates = soa::Join<aod::CandidatesD0Data, aod::HfSelD0>;
+  using D0Candidates = aod::CandidatesD0Data;
   //--HfSelD0: informações de seleção para D0
   //--HfCand2Prong: informações de reconstrução dos
   //  candidatos 2-prong
@@ -422,19 +422,19 @@ struct JetSpectraCharged {
     }
   }
 
-  void processDebugSelector(soa::Join<aod::HfCand2ProngWPid, aod::HfSelD0> const& candidates)
-  {
-    int nSel = 0;
-    int nTotal = 0;
-    for (auto& cand : candidates) {
-      nTotal++;
-      if (cand.isSelD0() || cand.isSelD0bar()) {
-        nSel++;
-      }
-    }
-    LOGF(info, "DEBUG - Selector: %d/%d candidatos selecionados", nSel, nTotal);
-  }
-  PROCESS_SWITCH(JetSpectraCharged, processDebugSelector, "debug", false);
+  //  void processDebugSelector(soa::Join<aod::HfCand2ProngWPid, aod::HfSelD0> const& candidates)
+  //  {
+  //    int nSel = 0;
+  //    int nTotal = 0;
+  //    for (auto& cand : candidates) {
+  //      nTotal++;
+  //      if (cand.isSelD0() || cand.isSelD0bar()) {
+  //        nSel++;
+  //      }
+  //    }
+  //    LOGF(info, "DEBUG - Selector: %d/%d candidatos selecionados", nSel, nTotal);
+  //  }
+  //  PROCESS_SWITCH(JetSpectraCharged, processDebugSelector, "debug", false);
 
   // ¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´><(((º>
   // BLOCK 5 (for D0 jets):
