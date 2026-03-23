@@ -518,16 +518,16 @@ struct JetSpectraCharged {
         continue;
       }
       // Aplicando cortes de aceitação em eta:
-      if (!isAcceptedJet<aod::JetTracks>(jet)) {
-        continue;
-      }
+      // if (!isAcceptedJet<aod::JetTracks>(jet)) {
+      //  continue;
+      //}
 
       fillJetHistograms(jet, centrality);     // preenchendo histogramas gerais de jatos
       fillD0JetHistograms(jet, d0Candidates); //, tracks); //preenchendo histrogramas de jatos D0
     }
   }
 
-  PROCESS_SWITCH(JetSpectraCharged, processD0JetsData, "jet spectra for Data with D0", true);
+  PROCESS_SWITCH(JetSpectraCharged, processD0JetsData, "jet spectra for Data with D0", false);
   // ¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´><(((º>
 
   template <typename TJets>
