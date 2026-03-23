@@ -465,8 +465,8 @@ struct JetSpectraCharged {
       auto d0 = allD0Candidates.iteratorAt(d0Index); // acessando o candidato D0 correspondente
 
       // Cortes de seleção no D0 (propriedades de D0 que estão na tabela):
-      if (!d0.isSelD0())
-        continue; // seleção padrão
+      // if (!d0.isSelD0())
+      // continue; // seleção padrão
       if (d0.pt() < d0PtMin)
         continue; // corte em pT mínimo
       if (d0.eta() < d0EtaMin || d0.eta() > d0EtaMax)
