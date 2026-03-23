@@ -522,7 +522,7 @@ struct JetSpectraCharged {
       //  continue;
       //}
 
-      fillJetHistograms(jet, centrality);     // preenchendo histogramas gerais de jatos
+      // fillJetHistograms(jet, centrality);     // preenchendo histogramas gerais de jatos
       fillD0JetHistograms(jet, d0Candidates); //, tracks); //preenchendo histrogramas de jatos D0
     }
   }
