@@ -477,18 +477,19 @@ struct JetSpectraCharged {
       // Cortes de seleção no D0 (propriedades de D0 que estão na tabela):
       // if (!d0.isSelD0())
       // continue; // seleção padrão
-      if (d0.pt() < d0PtMin) {
-        LOGF(info, "    Rejeitado por pT: %.2f < %.2f", d0.pt(), d0PtMin);
+      if (d0.pt() < d0PtMin.value) {
+        LOGF(info, "    Rejeitado por pT: %.2f < %.2f", d0.pt(), d0PtMin.value);
         continue; // corte em pT mínimo
       }
-      if (d0.eta() < d0EtaMin || d0.eta() > d0EtaMax) {
-        LOGF(info, "    Rejeitado por eta: %.2f", d0.eta());
+      if (d0.eta() < d0EtaMin.value || d0.eta() > d0EtaMax.value) {
+        LOGF(info, "    Rejeitado por eta: %.2f (limites: %.2f, %.2f)",
+             d0.eta(), d0EtaMin.value, d0EtaMax.value);
         continue; // corte em eta
       }
 
       constexpr float pdgMassD0 = 1.86483f;
-      if (std::abs(d0.m() - pdgMassD0) > d0MassWindow) {
-        LOGF(info, "    Rejeitado por massa: %.4f", d0.m());
+      if (std::abs(d0.m() - pdgMassD0) > d0MassWindow.value) {
+        LOGF(info, "    Rejeitado por massa: %.4f (janela: %.2f)", d0.m(), d0MassWindow.value);
         continue;
       }
 
@@ -528,7 +529,7 @@ struct JetSpectraCharged {
     //      return;
     //    }
     // Corte de ocupação (remove eventos com ocupação anômala):
-    if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
+    if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin.value || trackOccupancyInTimeRangeMax.value < collision.trackOccupancyInTimeRange()) {
       LOGF(info, "Rejeitado por ocupação: %d", collision.trackOccupancyInTimeRange());
       return;
     }
@@ -545,7 +546,7 @@ struct JetSpectraCharged {
            jetCount, jet.pt(), jet.eta(), jet.phi());
 
       // Verificando aceitação em eta:
-      if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
+      if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin.value, jetEtaMax.value, trackEtaMin.value, trackEtaMax.value)) {
         LOGF(info, "Jet rejeitado por eta: %.2f", jet.eta());
         continue;
       }
