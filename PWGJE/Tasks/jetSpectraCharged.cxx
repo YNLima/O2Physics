@@ -467,8 +467,15 @@ struct JetSpectraCharged {
       LOGF(info, "  d0Index[%d]=%d", d0IndexCount, d0Index);
 
       if (d0Index < 0) {
-        LOGF(info, "    d0Index inválido");
+        LOGF(info, "    d0Index inválido (negativo)");
         continue; // cortando índice invalido
+      }
+
+      // VERIFICA SE O ÍNDICE ESTÁ DENTRO DO INTERVALO
+      if (d0Index >= allD0Candidates.size()) {
+        LOGF(info, "    d0Index %d fora do intervalo! allD0Candidates.size()=%d",
+             d0Index, allD0Candidates.size());
+        continue;
       }
 
       auto d0 = allD0Candidates.iteratorAt(d0Index); // acessando o candidato D0 correspondente
