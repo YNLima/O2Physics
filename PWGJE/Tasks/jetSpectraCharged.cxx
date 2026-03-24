@@ -501,9 +501,9 @@ struct JetSpectraCharged {
   // aod::JetTracks const& tracks) //tracks gerais
   {
     // Seleção de colisão (via seleção padrão do O2):
-    if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
-      return;
-    }
+    //    if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
+    //      return;
+    //    }
     // Corte de ocupação (remove eventos com ocupação anômala):
     if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
       return;
