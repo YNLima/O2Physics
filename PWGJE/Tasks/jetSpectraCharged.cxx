@@ -448,34 +448,41 @@ struct JetSpectraCharged {
                            float weight = 1.0) // peso do evento
   {
     if (!useD0Jets)
-      return; // verificando se a análise D0 está habilitada
-
+      LOGF(info, "useD0Jets=false, retornando");
+    return; // verificando se a análise D0 está habilitada
+    LOGF(info, "fillD0JetHistograms: jet candidatesIds size=%d", jet.candidatesIds().size());
     bool hasD0InJet = false; // variável para rastrear se o jato tem D0
-
+    int d0IndexCount = 0;
     // Loop sobre todos os constituintes do jato:
     // for (const auto& constituent : jet.template tracks_as<aod::JetTracks>()) {
     // for (const auto& candidateId : jet.candidatesIds()) {
     // if (constituent.hasD0Candidate()) {//verificando se este track está associado a um candidato D0
     // auto d0Index = constituent.d0CandidateId(); //obtendo o índice do candidato D0 associado
     for (const auto& d0Index : jet.candidatesIds()) {
+      d0IndexCount++;
+      LOGF(info, "  d0Index[%d]=%d", d0IndexCount, d0Index);
 
       if (d0Index < 0)
-        continue; // cortando índice invalido
+        LOGF(info, "    d0Index inválido");
+      continue; // cortando índice invalido
 
       auto d0 = allD0Candidates.iteratorAt(d0Index); // acessando o candidato D0 correspondente
-
+      LOGF(info, "    D0: pt=%.2f, eta=%.2f, m=%.4f", d0.pt(), d0.eta(), d0.m());
       // Cortes de seleção no D0 (propriedades de D0 que estão na tabela):
       // if (!d0.isSelD0())
       // continue; // seleção padrão
       if (d0.pt() < d0PtMin)
-        continue; // corte em pT mínimo
+        LOGF(info, "    Rejeitado por pT: %.2f < %.2f", d0.pt(), d0PtMin);
+      continue; // corte em pT mínimo
       if (d0.eta() < d0EtaMin || d0.eta() > d0EtaMax)
-        continue; // corte em eta
+        LOGF(info, "    Rejeitado por eta: %.2f", d0.eta());
+      continue; // corte em eta
 
       constexpr float pdgMassD0 = 1.86483f;
       if (std::abs(d0.m() - pdgMassD0) > d0MassWindow)
-        continue;
-
+        LOGF(info, "    Rejeitado por massa: %.4f", d0.m());
+      continue;
+      LOGF(info, "    D0 ACEITO!");
       hasD0InJet = true; // marcando que o jato tem D0 válido
 
       // Preenchendo os histogramas de D0:
@@ -488,7 +495,10 @@ struct JetSpectraCharged {
     }
     // Se o jato contém D0, preenche o histograma:
     if (hasD0InJet) {
+      LOGF(info, "Jet tem D0! Preenchendo h_jet_pt_with_d0");
       registry.fill(HIST("h_jet_pt_with_d0"), jet.pt(), weight);
+    } else {
+      LOGF(info, "Jet NÃO tem D0");
     }
   }
 
