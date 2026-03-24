@@ -477,11 +477,6 @@ struct JetSpectraCharged {
 
       auto d0 = allD0Candidates.iteratorAt(d0Index); // acessando o candidato D0 correspondente
 
-      if (!d0.isValid()) {
-        LOGF(info, "    d0Index %d é inválido", d0Index);
-        continue;
-      }
-
       LOGF(info, "    D0: pt=%.2f, eta=%.2f, m=%.4f", d0.pt(), d0.eta(), d0.m());
 
       // Cortes de seleção no D0 (propriedades de D0 que estão na tabela):
