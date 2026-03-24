@@ -500,31 +500,42 @@ struct JetSpectraCharged {
                       D0Candidates const& d0Candidates)                           // candidatos D0
   // aod::JetTracks const& tracks) //tracks gerais
   {
+
+    LOGF(info, "=== processD0JetsData INICIADA ===");
+    LOGF(info, "Número de jatos D0: %d", d0Jets.size());
+    LOGF(info, "Número de candidatos D0: %d", d0Candidates.size());
+
     // Seleção de colisão (via seleção padrão do O2):
     //    if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
     //      return;
     //    }
     // Corte de ocupação (remove eventos com ocupação anômala):
     if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin || trackOccupancyInTimeRangeMax < collision.trackOccupancyInTimeRange()) {
+      LOGF(info, "Rejeitado por ocupação: %d", collision.trackOccupancyInTimeRange());
       return;
     }
-
+    LOGF(info, "Colisão aceita. Centralidade: %f", collision.centFT0M());
     //    float centrality = collision.centFT0M(); // obtendo a centralidade
-
+    int jetCount = 0;
     // Loop sobre todos os jatos D⁰ no evento:
     for (auto const& jet : d0Jets) {
+      jetCount++;
+      LOGF(info, "Processando jet %d: pt=%.2f, eta=%.2f, phi=%.2f",
+           jetCount, jet.pt(), jet.eta(), jet.phi());
       // Verificando aceitação em eta:
       if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin, jetEtaMax, trackEtaMin, trackEtaMax)) {
+        LOGF(info, "Jet rejeitado por eta: %.2f", jet.eta());
         continue;
       }
       // Aplicando cortes de aceitação em eta:
       // if (!isAcceptedJet<aod::JetTracks>(jet)) {
       //  continue;
       //}
-
+      LOGF(info, "Jet aceito. Chamando fillD0JetHistograms");
       // fillJetHistograms(jet, centrality);     // preenchendo histogramas gerais de jatos
       fillD0JetHistograms(jet, d0Candidates); //, tracks); //preenchendo histrogramas de jatos D0
     }
+    LOGF(info, "=== processD0JetsData FINALIZADA ===");
   }
 
   PROCESS_SWITCH(JetSpectraCharged, processD0JetsData, "jet spectra for Data with D0", false);
