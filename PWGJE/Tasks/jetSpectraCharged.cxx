@@ -450,7 +450,11 @@ struct JetSpectraCharged {
     if (!useD0Jets)
       return; // verificando se a análise D0 está habilitada
 
+    LOGF(info, "fillD0JetHistograms: jet.pt=%.2f, candidatesIds size=%d",
+         jet.pt(), jet.candidatesIds().size());
+
     bool hasD0InJet = false; // variável para rastrear se o jato tem D0
+    int d0IndexCount = 0;
 
     // Loop sobre todos os constituintes do jato:
     // for (const auto& constituent : jet.template tracks_as<aod::JetTracks>()) {
@@ -458,36 +462,65 @@ struct JetSpectraCharged {
     // if (constituent.hasD0Candidate()) {//verificando se este track está associado a um candidato D0
     // auto d0Index = constituent.d0CandidateId(); //obtendo o índice do candidato D0 associado
     for (const auto& d0Index : jet.candidatesIds()) {
+      d0IndexCount++;
+      LOGF(info, "  d0Index[%d]=%d", d0IndexCount, d0Index);
 
-      if (d0Index < 0)
+      if (d0Index < 0) {
+        LOGF(info, "    d0Index inválido (<0)");
         continue; // cortando índice invalido
+      }
+
+      if (d0Index >= allD0Candidates.size()) {
+        LOGF(info, "    d0Index %d excede tamanho da tabela %d", d0Index, allD0Candidates.size());
+        continue;
+      }
 
       auto d0 = allD0Candidates.iteratorAt(d0Index); // acessando o candidato D0 correspondente
+
+      if (!d0.isValid()) {
+        LOGF(info, "    d0Index %d é inválido", d0Index);
+        continue;
+      }
+
+      LOGF(info, "    D0: pt=%.2f, eta=%.2f, m=%.4f", d0.pt(), d0.eta(), d0.m());
 
       // Cortes de seleção no D0 (propriedades de D0 que estão na tabela):
       // if (!d0.isSelD0())
       // continue; // seleção padrão
-      if (d0.pt() < d0PtMin)
+      if (d0.pt() < d0PtMin) {
+        LOGF(info, "    Rejeitado por pT: %.2f < %.2f", d0.pt(), d0PtMin);
         continue; // corte em pT mínimo
-      if (d0.eta() < d0EtaMin || d0.eta() > d0EtaMax)
+      }
+      if (d0.eta() < d0EtaMin || d0.eta() > d0EtaMax) {
+        LOGF(info, "    Rejeitado por eta: %.2f (range: %.2f-%.2f)", d0.eta(), d0EtaMin, d0EtaMax);
         continue; // corte em eta
+      }
 
       constexpr float pdgMassD0 = 1.86483f;
-      if (std::abs(d0.m() - pdgMassD0) > d0MassWindow)
+      float massDiff = std::abs(d0.m() - pdgMassD0);
+      if (massDiff > d0MassWindow) {
+        LOGF(info, "    Rejeitado por massa: %.4f (dif=%.4f > %.4f)", d0.m(), massDiff, d0MassWindow);
         continue;
+      }
 
+      LOGF(info, "    D0 ACEITO!");
       hasD0InJet = true; // marcando que o jato tem D0 válido
 
       // Preenchendo os histogramas de D0:
-      registry.fill(HIST("h_d0_mass"), d0.m(), weight);
-      registry.fill(HIST("h_d0_pt"), d0.pt(), weight);
-      registry.fill(HIST("h_d0_eta"), d0.eta(), weight);
-      if (jet.pt() > 0) { // para a razão pTD0/pTjet
-        registry.fill(HIST("h_d0_jet_pt_ratio"), d0.pt() / jet.pt(), weight);
+      try {
+        registry.fill(HIST("h_d0_mass"), d0.m(), weight);
+        registry.fill(HIST("h_d0_pt"), d0.pt(), weight);
+        registry.fill(HIST("h_d0_eta"), d0.eta(), weight);
+        if (jet.pt() > 0) {
+          registry.fill(HIST("h_d0_jet_pt_ratio"), d0.pt() / jet.pt(), weight);
+        }
+      } catch (...) {
+        LOGF(info, "    ERRO ao preencher histogramas!");
       }
     }
-    // Se o jato contém D0, preenche o histograma:
+
     if (hasD0InJet) {
+      LOGF(info, "Jet tem D0! Preenchendo h_jet_pt_with_d0");
       registry.fill(HIST("h_jet_pt_with_d0"), jet.pt(), weight);
     }
   }
