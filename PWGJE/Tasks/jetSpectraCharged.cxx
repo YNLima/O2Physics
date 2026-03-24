@@ -509,7 +509,7 @@ struct JetSpectraCharged {
       return;
     }
 
-    float centrality = collision.centFT0M(); // obtendo a centralidade
+    //    float centrality = collision.centFT0M(); // obtendo a centralidade
 
     // Loop sobre todos os jatos D⁰ no evento:
     for (auto const& jet : d0Jets) {
