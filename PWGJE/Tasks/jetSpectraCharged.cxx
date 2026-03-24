@@ -495,9 +495,9 @@ struct JetSpectraCharged {
   // ¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´><(((º>
   // Função para processar eventos que contém jatos com D0:
   void
-    processD0JetsData(soa::Filtered<aod::JetCollisions>::iterator const& collision, // colisão filtrada
-                      D0Jets const& d0Jets,                                         // jatos com informações D0
-                      D0Candidates const& d0Candidates)                             // candidatos D0
+    processD0JetsData(soa::Filtered<aod::JCollisions>::iterator const& collision, // colisão filtrada
+                      D0Jets const& d0Jets,                                       // jatos com informações D0
+                      D0Candidates const& d0Candidates)                           // candidatos D0
   // aod::JetTracks const& tracks) //tracks gerais
   {
     // Seleção de colisão (via seleção padrão do O2):
