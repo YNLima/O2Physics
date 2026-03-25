@@ -549,12 +549,12 @@ struct JetSpectraCharged {
     for (auto const& jet : d0Jets) {
 
       jetCount++;
-      LOGF(info, "Processando jet %d: pt=%.2f, eta=%.2f, phi=%.2f",
-           jetCount, jet.pt(), jet.eta(), jet.phi());
+      // LOGF(info, "Processando jet %d: pt=%.2f, eta=%.2f, phi=%.2f",
+      // jetCount, jet.pt(), jet.eta(), jet.phi());
 
       // Verificando aceitação em eta:
       if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin.value, jetEtaMax.value, trackEtaMin.value, trackEtaMax.value)) {
-        LOGF(info, "Jet rejeitado por eta: %.2f", jet.eta());
+        // LOGF(info, "Jet rejeitado por eta: %.2f", jet.eta());
         continue;
       }
       // Aplicando cortes de aceitação em eta:
