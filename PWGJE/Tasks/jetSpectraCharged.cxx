@@ -528,20 +528,20 @@ struct JetSpectraCharged {
                       D0Candidates const& d0Candidates)                           // candidatos D0
   // aod::JetTracks const& tracks) //tracks gerais
   {
-    LOGF(info, "=== processD0JetsData INICIADA ===");
-    LOGF(info, "Número de jatos D0: %d", d0Jets.size());
-    LOGF(info, "Número de candidatos D0: %d", d0Candidates.size());
-    // Seleção de colisão (via seleção padrão do O2):
-    //    if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
-    //      return;
-    //    }
-    // Corte de ocupação (remove eventos com ocupação anômala):
+    // LOGF(info, "=== processD0JetsData INICIADA ===");
+    // LOGF(info, "Número de jatos D0: %d", d0Jets.size());
+    // LOGF(info, "Número de candidatos D0: %d", d0Candidates.size());
+    //  Seleção de colisão (via seleção padrão do O2):
+    //     if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
+    //       return;
+    //     }
+    //  Corte de ocupação (remove eventos com ocupação anômala):
     if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin.value || trackOccupancyInTimeRangeMax.value < collision.trackOccupancyInTimeRange()) {
-      LOGF(info, "Rejeitado por ocupação: %d", collision.trackOccupancyInTimeRange());
+      // LOGF(info, "Rejeitado por ocupação: %d", collision.trackOccupancyInTimeRange());
       return;
     }
 
-    LOGF(info, "Colisão aceita. Centralidade: %f", collision.centFT0M());
+    // LOGF(info, "Colisão aceita. Centralidade: %f", collision.centFT0M());
 
     //    float centrality = collision.centFT0M(); // obtendo a centralidade
     int jetCount = 0;
