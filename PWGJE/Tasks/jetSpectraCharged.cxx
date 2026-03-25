@@ -448,14 +448,14 @@ struct JetSpectraCharged {
                            float weight = 1.0) // peso do evento
   {
     if (!useD0Jets) {
-      LOGF(info, "useD0Jets=false, retornando");
+      //      LOGF(info, "useD0Jets=false, retornando");
       return; // verificando se a análise D0 está habilitada
     }
 
-    LOGF(info, "fillD0JetHistograms: jet candidatesIds size=%d", jet.candidatesIds().size());
+    //    LOGF(info, "fillD0JetHistograms: jet candidatesIds size=%d", jet.candidatesIds().size());
 
     bool hasD0InJet = false; // variável para rastrear se o jato tem D0
-    int d0IndexCount = 0;
+                             //    int d0IndexCount = 0;
 
     // Loop sobre todos os constituintes do jato:
     // for (const auto& constituent : jet.template tracks_as<aod::JetTracks>()) {
@@ -463,44 +463,44 @@ struct JetSpectraCharged {
     // if (constituent.hasD0Candidate()) {//verificando se este track está associado a um candidato D0
     // auto d0Index = constituent.d0CandidateId(); //obtendo o índice do candidato D0 associado
     for (const auto& d0Index : jet.candidatesIds()) {
-      d0IndexCount++;
-      LOGF(info, "  d0Index[%d]=%d", d0IndexCount, d0Index);
+      //      d0IndexCount++;
+      //      LOGF(info, "  d0Index[%d]=%d", d0IndexCount, d0Index);
 
       if (d0Index < 0) {
-        LOGF(info, "    d0Index inválido (negativo)");
+        //        LOGF(info, "    d0Index inválido (negativo)");
         continue; // cortando índice invalido
       }
 
       // VERIFICA SE O ÍNDICE ESTÁ DENTRO DO INTERVALO
-      if (d0Index >= allD0Candidates.size()) {
-        LOGF(info, "    d0Index %d fora do intervalo! allD0Candidates.size()=%d",
-             d0Index, allD0Candidates.size());
-        continue;
-      }
+      //      if (d0Index >= allD0Candidates.size()) {
+      //        LOGF(info, "    d0Index %d fora do intervalo! allD0Candidates.size()=%d",
+      //             d0Index, allD0Candidates.size());
+      //        continue;
+      //      }
 
       auto d0 = allD0Candidates.iteratorAt(d0Index); // acessando o candidato D0 correspondente
-      LOGF(info, "    D0: pt=%.2f, eta=%.2f, m=%.4f", d0.pt(), d0.eta(), d0.m());
+                                                     //      LOGF(info, "    D0: pt=%.2f, eta=%.2f, m=%.4f", d0.pt(), d0.eta(), d0.m());
 
       // Cortes de seleção no D0 (propriedades de D0 que estão na tabela):
       // if (!d0.isSelD0())
       // continue; // seleção padrão
       if (d0.pt() < d0PtMin.value) {
-        LOGF(info, "    Rejeitado por pT: %.2f < %.2f", d0.pt(), d0PtMin.value);
+        //        LOGF(info, "    Rejeitado por pT: %.2f < %.2f", d0.pt(), d0PtMin.value);
         continue; // corte em pT mínimo
       }
       if (d0.eta() < d0EtaMin.value || d0.eta() > d0EtaMax.value) {
-        LOGF(info, "    Rejeitado por eta: %.2f (limites: %.2f, %.2f)",
+        //        LOGF(info, "    Rejeitado por eta: %.2f (limites: %.2f, %.2f)",
              d0.eta(), d0EtaMin.value, d0EtaMax.value);
-        continue; // corte em eta
+             continue; // corte em eta
       }
 
       constexpr float pdgMassD0 = 1.86483f;
       if (std::abs(d0.m() - pdgMassD0) > d0MassWindow.value) {
-        LOGF(info, "    Rejeitado por massa: %.4f (janela: %.2f)", d0.m(), d0MassWindow.value);
+        //        LOGF(info, "    Rejeitado por massa: %.4f (janela: %.2f)", d0.m(), d0MassWindow.value);
         continue;
       }
 
-      LOGF(info, "    D0 ACEITO!");
+      //      LOGF(info, "    D0 ACEITO!");
       hasD0InJet = true; // marcando que o jato tem D0 válido
 
       // Preenchendo os histogramas de D0:
@@ -513,11 +513,12 @@ struct JetSpectraCharged {
     }
     // Se o jato contém D0, preenche o histograma:
     if (hasD0InJet) {
-      LOGF(info, "Jet tem D0! Preenchendo h_jet_pt_with_d0");
+      //      LOGF(info, "Jet tem D0! Preenchendo h_jet_pt_with_d0");
       registry.fill(HIST("h_jet_pt_with_d0"), jet.pt(), weight);
-    } else {
-      LOGF(info, "Jet NÃO tem D0");
     }
+    //  else {
+    //    LOGF(info, "Jet NÃO tem D0");
+    //  }
   }
 
   // ¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´><(((º>
@@ -528,20 +529,20 @@ struct JetSpectraCharged {
                       D0Candidates const& d0Candidates)                           // candidatos D0
   // aod::JetTracks const& tracks) //tracks gerais
   {
-    LOGF(info, "=== processD0JetsData INICIADA ===");
-    LOGF(info, "Número de jatos D0: %d", d0Jets.size());
-    LOGF(info, "Número de candidatos D0: %d", d0Candidates.size());
+    //    LOGF(info, "=== processD0JetsData INICIADA ===");
+    //    LOGF(info, "Número de jatos D0: %d", d0Jets.size());
+    //    LOGF(info, "Número de candidatos D0: %d", d0Candidates.size());
     // Seleção de colisão (via seleção padrão do O2):
     //    if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
     //      return;
     //    }
     // Corte de ocupação (remove eventos com ocupação anômala):
     if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin.value || trackOccupancyInTimeRangeMax.value < collision.trackOccupancyInTimeRange()) {
-      LOGF(info, "Rejeitado por ocupação: %d", collision.trackOccupancyInTimeRange());
+      //      LOGF(info, "Rejeitado por ocupação: %d", collision.trackOccupancyInTimeRange());
       return;
     }
 
-    LOGF(info, "Colisão aceita. Centralidade: %f", collision.centFT0M());
+    //    LOGF(info, "Colisão aceita. Centralidade: %f", collision.centFT0M());
 
     //    float centrality = collision.centFT0M(); // obtendo a centralidade
     int jetCount = 0;
@@ -549,23 +550,23 @@ struct JetSpectraCharged {
     for (auto const& jet : d0Jets) {
 
       jetCount++;
-      LOGF(info, "Processando jet %d: pt=%.2f, eta=%.2f, phi=%.2f",
+      //      LOGF(info, "Processando jet %d: pt=%.2f, eta=%.2f, phi=%.2f",
            jetCount, jet.pt(), jet.eta(), jet.phi());
 
-      // Verificando aceitação em eta:
-      if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin.value, jetEtaMax.value, trackEtaMin.value, trackEtaMax.value)) {
-        LOGF(info, "Jet rejeitado por eta: %.2f", jet.eta());
-        continue;
-      }
-      // Aplicando cortes de aceitação em eta:
-      // if (!isAcceptedJet<aod::JetTracks>(jet)) {
-      //  continue;
-      //}
-      LOGF(info, "Jet aceito. Chamando fillD0JetHistograms");
-      // fillJetHistograms(jet, centrality);     // preenchendo histogramas gerais de jatos
-      fillD0JetHistograms(jet, d0Candidates); //, tracks); //preenchendo histrogramas de jatos D0
+           // Verificando aceitação em eta:
+           if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin.value, jetEtaMax.value, trackEtaMin.value, trackEtaMax.value)) {
+             //        LOGF(info, "Jet rejeitado por eta: %.2f", jet.eta());
+             continue;
+           }
+           // Aplicando cortes de aceitação em eta:
+           // if (!isAcceptedJet<aod::JetTracks>(jet)) {
+           //  continue;
+           //}
+           //      LOGF(info, "Jet aceito. Chamando fillD0JetHistograms");
+           // fillJetHistograms(jet, centrality);     // preenchendo histogramas gerais de jatos
+           fillD0JetHistograms(jet, d0Candidates); //, tracks); //preenchendo histrogramas de jatos D0
     }
-    LOGF(info, "=== processD0JetsData FINALIZADA ===");
+    //    LOGF(info, "=== processD0JetsData FINALIZADA ===");
   }
 
   PROCESS_SWITCH(JetSpectraCharged, processD0JetsData, "jet spectra for Data with D0", false);
