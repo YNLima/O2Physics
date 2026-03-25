@@ -513,11 +513,11 @@ struct JetSpectraCharged {
     }
     // Se o jato contém D0, preenche o histograma:
     if (hasD0InJet) {
-      LOGF(info, "Jet tem D0! Preenchendo h_jet_pt_with_d0");
+      // LOGF(info, "Jet tem D0! Preenchendo h_jet_pt_with_d0");
       registry.fill(HIST("h_jet_pt_with_d0"), jet.pt(), weight);
-    } else {
-      LOGF(info, "Jet NÃO tem D0");
-    }
+    } // else {
+      // LOGF(info, "Jet NÃO tem D0");
+    //}
   }
 
   // ¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´><(((º>
@@ -561,11 +561,11 @@ struct JetSpectraCharged {
       // if (!isAcceptedJet<aod::JetTracks>(jet)) {
       //  continue;
       //}
-      LOGF(info, "Jet aceito. Chamando fillD0JetHistograms");
+      // LOGF(info, "Jet aceito. Chamando fillD0JetHistograms");
       // fillJetHistograms(jet, centrality);     // preenchendo histogramas gerais de jatos
       fillD0JetHistograms(jet, d0Candidates); //, tracks); //preenchendo histrogramas de jatos D0
     }
-    LOGF(info, "=== processD0JetsData FINALIZADA ===");
+    // LOGF(info, "=== processD0JetsData FINALIZADA ===");
   }
 
   PROCESS_SWITCH(JetSpectraCharged, processD0JetsData, "jet spectra for Data with D0", false);
