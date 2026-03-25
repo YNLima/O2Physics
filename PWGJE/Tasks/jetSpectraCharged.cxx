@@ -474,8 +474,8 @@ struct JetSpectraCharged {
       // VERIFICA SE O ÍNDICE ESTÁ DENTRO DO INTERVALO
       if (d0Index >= allD0Candidates.size()) {
         // LOGF(info, "    d0Index %d fora do intervalo! allD0Candidates.size()=%d",
-             d0Index, allD0Candidates.size());
-             continue;
+        // d0Index, allD0Candidates.size());
+        continue;
       }
 
       auto d0 = allD0Candidates.iteratorAt(d0Index); // acessando o candidato D0 correspondente
