@@ -41,17 +41,13 @@
 #include "PWGHF/DataModel/CandidateReconstructionTables.h"
 #include "PWGHF/DataModel/CandidateSelectionTables.h"
 #include "PWGHF/DataModel/DerivedTables.h"
-// #include "PWGJE/DataModel/Jet.h"
 
-//--CandidateReconstructionTables.h: tabelas de
-//  reconstrução para identificar e caracterizar
-//  candidatos heavy-flavor
-//--CandidateSelectionTables.h: tabelas de seleção que
-//  contêm resultados dos cortes de seleção aplicados
-//  aos candidatos (flags de seleção, variáveis de
+//--CandidateReconstructionTables.h: tabelas de reconstrução para identificar
+//  e caracterizar candidatos heavy-flavor
+//--CandidateSelectionTables.h: tabelas de seleção que contêm resultados dos
+//  cortes de seleção aplicados aos candidatos (flags de seleção, variáveis de
 //  decisão, etc)
-//--DerivedTables.h: tabelas derivadas a partir de outras
-//  tabelas HF
+//--DerivedTables.h: tabelas derivadas a partir de outras tabelas HF
 // ¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´><(((º>
 
 using namespace o2;
