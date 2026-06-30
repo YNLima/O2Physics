@@ -42,14 +42,11 @@
 #include "PWGHF/DataModel/CandidateSelectionTables.h"
 #include "PWGHF/DataModel/DerivedTables.h"
 
-//--CandidateReconstructionTables.h: tabelas de reconstrução para identificar
-//  e caracterizar candidatos heavy-flavor
-//--CandidateSelectionTables.h: tabelas de seleção que contêm resultados dos
-//  cortes de seleção aplicados aos candidatos (flags de seleção, variáveis de
-//  decisão, etc)
-//--DerivedTables.h: tabelas derivadas a partir de outras tabelas HF
-// ¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´><(((º>
+//--CandidateReconstructionTables.h: recontruction tables to identify and caracterize heavy-flavor candidates
+//--CandidateSelectionTables.h: selection tables containing results of the selection cutoffs apllied to the candidates (selection flags, decision variables, etc)
+//--DerivedTables.h: derived tables from other HF tables.
 
+// ¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´><(((º>
 using namespace o2;
 using namespace o2::framework;
 using namespace o2::framework::expressions;
@@ -68,20 +65,11 @@ struct JetSpectraCharged {
   // Joining tables of interest:
   // using HfCandidates = soa::Join<aod::HfCand2Prong, aod::HfSelD0>;
   // using HfMCCandidates = soa::Join<HfCandidates, aod::HfCand2ProngMcRec>;
-  using D0Jets = soa::Join<aod::D0ChargedJets, aod::D0ChargedJetConstituents>;
   // using D0Candidates = soa::Join<aod::CandidatesD0Data, aod::HfSelD0>;
-  using D0Candidates = aod::CandidatesD0Data; // sem join com HfSelD0
+  using D0Jets = soa::Join<aod::D0ChargedJets, aod::D0ChargedJetConstituents>;
+  using D0Candidates = aod::CandidatesD0Data;
 
-  //--HfSelD0: informações de seleção para D0
-  //--HfCand2Prong: informações de reconstrução dos
-  //  candidatos 2-prong
-  //--HfCand2ProngMcRec: informações Monte Carlo de
-  //  reconstrução dos candidatos 2-prong
-  //
-  // Essas tabelas de interesse residem dentro dos arquivos
-  // declarados no cabeçalho
   // ¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´><(((º>
-
   HistogramRegistry registry;
 
   Configurable<float> selectedJetsRadius{"selectedJetsRadius", 0.2, "resolution parameter for histograms without radius"};
@@ -123,8 +111,8 @@ struct JetSpectraCharged {
   Configurable<float> d0EtaMin{"d0EtaMin", -0.8, "minimum D0 eta"};
   Configurable<float> d0EtaMax{"d0EtaMax", 0.8, "maximum D0 eta"};
   Configurable<bool> useD0Jets{"useD0Jets", false, "enable D0 jet analysis"};
-  // ¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´><(((º>
 
+  // ¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´><(((º>
   std::vector<int> eventSelectionBits;
   int trackSelection = -1;
 
@@ -153,7 +141,6 @@ struct JetSpectraCharged {
       registry.add("h_d0_jet_pt_ratio", "D^{0} p_{T} / jet p_{T};#it{p}_{T,D^{0}}/#it{p}_{T,jet};counts", {HistType::kTH1F, {{100, 0., 1.}}});
     }
     // ¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´><(((º>
-
     if (doprocessQC || doprocessQCWeighted) {
       registry.add("h_track_pt", "track #it{p}_{T} ; #it{p}_{T,track} (GeV/#it{c})", {HistType::kTH1F, {trackPtAxis}});
       registry.add("h2_track_eta_track_phi", "track eta vs. track phi; #eta; #phi; counts", {HistType::kTH2F, {trackEtaAxis, phiAxis}});
@@ -436,102 +423,102 @@ struct JetSpectraCharged {
   // ¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´><(((º>
   // BLOCK 5 (for D0 jets):
 
-  // Função para preencher histogramas de jatos com candidatos D0:
-  template <typename TJet>                                      // declarando TJet como um tipo genérico
-  void fillD0JetHistograms(TJet const& jet,                     // jato atual sendo processado
-                           D0Candidates const& allD0Candidates, // todas as tabelas de candidatos D0 no evento
-                           // aod::JetTracks const& tracks, //tabelas de tracks
-                           float weight = 1.0) // peso do evento
+  // Function to fill jet histograms with D0 candidates:
+  template <typename TJet>                                      // declaring TJet as a generic type
+  void fillD0JetHistograms(TJet const& jet,                     // current jet being processed
+                           D0Candidates const& allD0Candidates, // all D0 candidate tables in the event
+                           // aod::JetTracks const& tracks,     // track tables
+                           float weight = 1.0) // event weight
   {
     if (!useD0Jets) {
-      // LOGF(info, "useD0Jets=false, retornando");
-      return; // verificando se a análise D0 está habilitada
+      // LOGF(info, "useD0Jets=false, returning");
+      return; // checking if the D0 analysis is enabled
     }
 
     // LOGF(info, "fillD0JetHistograms: jet candidatesIds size=%d", jet.candidatesIds().size());
 
-    bool hasD0InJet = false; // variável para rastrear se o jato tem D0
+    bool hasD0InJet = false; // variable to track if the jet has D0
     int d0IndexCount = 0;
 
-    // Loop sobre todos os constituintes do jato:
+    // Loop over all jet contituents:
     // for (const auto& constituent : jet.template tracks_as<aod::JetTracks>()) {
     // for (const auto& candidateId : jet.candidatesIds()) {
-    // if (constituent.hasD0Candidate()) {//verificando se este track está associado a um candidato D0
-    // auto d0Index = constituent.d0CandidateId(); //obtendo o índice do candidato D0 associado
+    // if (constituent.hasD0Candidate()) {// checking if this track is associated with a D0 candidate
+    // auto d0Index = constituent.d0CandidateId(); //obtening the index of the associated D0 candidate
     for (const auto& d0Index : jet.candidatesIds()) {
       d0IndexCount++;
       // LOGF(info, "  d0Index[%d]=%d", d0IndexCount, d0Index);
 
       if (d0Index < 0) {
-        // LOGF(info, "    d0Index inválido (negativo)");
-        continue; // cortando índice invalido
+        // LOGF(info, "    invalid d0Index (negative)");
+        continue; // cutting invalid index
       }
 
-      // VERIFICA SE O ÍNDICE ESTÁ DENTRO DO INTERVALO
+      // Checking if the index is within the range:
       if (d0Index >= allD0Candidates.size()) {
-        // LOGF(info, "    d0Index %d fora do intervalo! allD0Candidates.size()=%d",
+        // LOGF(info, "    d0Index %d outside the range! allD0Candidates.size()=%d",
         // d0Index, allD0Candidates.size());
         continue;
       }
 
-      auto d0 = allD0Candidates.iteratorAt(d0Index); // acessando o candidato D0 correspondente
+      auto d0 = allD0Candidates.iteratorAt(d0Index); // acessing the correspondent D0 candidate
       // LOGF(info, "    D0: pt=%.2f, eta=%.2f, m=%.4f", d0.pt(), d0.eta(), d0.m());
 
-      // Cortes de seleção no D0 (propriedades de D0 que estão na tabela):
+      // Selection cuts on D0 (D0 properties are in the table):
       // if (!d0.isSelD0())
       // continue; // seleção padrão
       if (d0.pt() < d0PtMin.value) {
-        // LOGF(info, "    Rejeitado por pT: %.2f < %.2f", d0.pt(), d0PtMin.value);
-        continue; // corte em pT mínimo
+        // LOGF(info, "    Rejected by pT: %.2f < %.2f", d0.pt(), d0PtMin.value);
+        continue; // pT min cutoff
       }
       if (d0.eta() < d0EtaMin.value || d0.eta() > d0EtaMax.value) {
-        // LOGF(info, "    Rejeitado por eta: %.2f (limites: %.2f, %.2f)",
+        // LOGF(info, "    Rejected by eta: %.2f (limites: %.2f, %.2f)",
         // d0.eta(), d0EtaMin.value, d0EtaMax.value);
-        continue; // corte em eta
+        continue; // eta cutoff
       }
 
       constexpr float pdgMassD0 = 1.86483f;
       if (std::abs(d0.m() - pdgMassD0) > d0MassWindow.value) {
-        // LOGF(info, "    Rejeitado por massa: %.4f (janela: %.2f)", d0.m(), d0MassWindow.value);
+        // LOGF(info, "    Rejected by mass: %.4f (janela: %.2f)", d0.m(), d0MassWindow.value);
         continue;
       }
 
-      // LOGF(info, "    D0 ACEITO!");
-      hasD0InJet = true; // marcando que o jato tem D0 válido
+      // LOGF(info, "    D0 ACCEPTED!");
+      hasD0InJet = true; // indicating that the jet has a valid D0
 
-      // Preenchendo os histogramas de D0:
+      // Filling the D0 histograms:
       registry.fill(HIST("h_d0_mass"), d0.m(), weight);
       registry.fill(HIST("h_d0_pt"), d0.pt(), weight);
       registry.fill(HIST("h_d0_eta"), d0.eta(), weight);
-      if (jet.pt() > 0) { // para a razão pTD0/pTjet
+      if (jet.pt() > 0) { // ratio pTD0/pTjet
         registry.fill(HIST("h_d0_jet_pt_ratio"), d0.pt() / jet.pt(), weight);
       }
     }
-    // Se o jato contém D0, preenche o histograma:
+    // If the jet contains D0, fill histogram:
     if (hasD0InJet) {
-      // LOGF(info, "Jet tem D0! Preenchendo h_jet_pt_with_d0");
+      // LOGF(info, "Jet has D0! Filling h_jet_pt_with_d0");
       registry.fill(HIST("h_jet_pt_with_d0"), jet.pt(), weight);
     } // else {
-      // LOGF(info, "Jet NÃO tem D0");
+      // LOGF(info, "Jet does NOT have D0");
     //}
   }
 
   // ¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´><(((º>
-  // Função para processar eventos que contém jatos com D0:
+  // Function to process events containing jets with D0:
   void
-    processD0JetsData(soa::Filtered<aod::JCollisions>::iterator const& collision, // colisão filtrada
-                      D0Jets const& d0Jets,                                       // jatos com informações D0
-                      D0Candidates const& d0Candidates)                           // candidatos D0
-  // aod::JetTracks const& tracks) //tracks gerais
+    processD0JetsData(soa::Filtered<aod::JCollisions>::iterator const& collision, // filtered collision
+                      D0Jets const& d0Jets,                                       // jets with D0 informations
+                      D0Candidates const& d0Candidates)                           // D0 candidates
+  // aod::JetTracks const& tracks) //generak tracks
   {
-    // LOGF(info, "=== processD0JetsData INICIADA ===");
-    // LOGF(info, "Número de jatos D0: %d", d0Jets.size());
-    // LOGF(info, "Número de candidatos D0: %d", d0Candidates.size());
-    //  Seleção de colisão (via seleção padrão do O2):
+    // LOGF(info, "processD0JetsData STARTED");
+    // LOGF(info, "Number of D0 jets: %d", d0Jets.size());
+    // LOGF(info, "Number of D0 candidates: %d", d0Candidates.size());
+    //  Collision selection (via O2 standard selection):
     //     if (!jetderiveddatautilities::selectCollision(collision, eventSelectionBits, skipMBGapEvents)) {
     //       return;
     //     }
-    //  Corte de ocupação (remove eventos com ocupação anômala):
+    //  Occupancy cutoff (removes events with anomalous occupancy):
     if (collision.trackOccupancyInTimeRange() < trackOccupancyInTimeRangeMin.value || trackOccupancyInTimeRangeMax.value < collision.trackOccupancyInTimeRange()) {
       // LOGF(info, "Rejeitado por ocupação: %d", collision.trackOccupancyInTimeRange());
       return;
@@ -539,34 +526,34 @@ struct JetSpectraCharged {
 
     // LOGF(info, "Colisão aceita. Centralidade: %f", collision.centFT0M());
 
-    //    float centrality = collision.centFT0M(); // obtendo a centralidade
+    //    float centrality = collision.centFT0M(); // obtaining the centrality
     int jetCount = 0;
-    // Loop sobre todos os jatos D⁰ no evento:
+    // Loop over all D0 jets in the event:
     for (auto const& jet : d0Jets) {
 
       jetCount++;
-      // LOGF(info, "Processando jet %d: pt=%.2f, eta=%.2f, phi=%.2f",
+      // LOGF(info, "Processing jet %d: pt=%.2f, eta=%.2f, phi=%.2f",
       // jetCount, jet.pt(), jet.eta(), jet.phi());
 
-      // Verificando aceitação em eta:
+      // Checking acceptance at eta:
       if (!jetfindingutilities::isInEtaAcceptance(jet, jetEtaMin.value, jetEtaMax.value, trackEtaMin.value, trackEtaMax.value)) {
-        // LOGF(info, "Jet rejeitado por eta: %.2f", jet.eta());
+        // LOGF(info, "Jet rejected by eta: %.2f", jet.eta());
         continue;
       }
-      // Aplicando cortes de aceitação em eta:
+      // Applying acceptance cuts on eta:
       // if (!isAcceptedJet<aod::JetTracks>(jet)) {
       //  continue;
       //}
-      // LOGF(info, "Jet aceito. Chamando fillD0JetHistograms");
-      // fillJetHistograms(jet, centrality);     // preenchendo histogramas gerais de jatos
-      fillD0JetHistograms(jet, d0Candidates); //, tracks); //preenchendo histrogramas de jatos D0
+      // LOGF(info, "Jet accepted. Calling fillD0JetHistograms");
+      // fillJetHistograms(jet, centrality);     // filling general jet histograms
+      fillD0JetHistograms(jet, d0Candidates); //, tracks); // filling D0 jets histograms
     }
-    // LOGF(info, "=== processD0JetsData FINALIZADA ===");
+    // LOGF(info, "processD0JetsData COMPLETED");
   }
 
   PROCESS_SWITCH(JetSpectraCharged, processD0JetsData, "jet spectra for Data with D0", false);
-  // ¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´><(((º>
 
+  // ¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´¯·.¸¸.·´><(((º>
   template <typename TJets>
   void fillMCPAreaSubHistograms(TJets const& jet, float rho = 0.0, float weight = 1.0)
   {
